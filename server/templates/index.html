@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1 id="ip">IP Address: {{ ipaddress }}</h1>
+<br>
+<h2 id="third">Third Level: {{ third }}</h2>
+<br>
+<h2 id="second">Second Level: {{ second }}</h2>
+<br>
+<h2 id="first">First Level: {{ first }}</h2>
+<script>
+    function updateData() {
+        $.ajax({
+            type: "POST",
+            url: "/data",  // Flask route for handling the POST request
+            success: function(data) {
+                $("#ip").text(data);  // Update the content of the #ip element with the received data
+                $("#third").text(data);  
+                $("#second").text(data);  
+                $("#first").text(data);  
+            }
+        });
+    }
+
+    // Call the updateData function when the page loads
+    $(document).ready(function() {
+        updateData();
+    });
+</script>
+{% endblock %}

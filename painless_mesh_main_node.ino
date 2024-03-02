@@ -1,42 +1,49 @@
 #include "painlessMesh.h"
 #include <M5StickCPlus.h>
+#include <Arduino_JSON.h>
 
-#define   MESH_PREFIX     "whateverYouLike"
-#define   MESH_PASSWORD   "somethingSneaky"
+#define   MESH_PREFIX     "myMesh"
+#define   MESH_PASSWORD   "password"
 #define   MESH_PORT       5555
-#define NODE "C"
+#define   MAINNODE        "A"
+#define   NODE            "A"
 
-Scheduler userScheduler; // to control your personal task
+Scheduler userScheduler;
 painlessMesh  mesh;
 
 int count = 0;
 
-// User stub
-void sendMessage() ; // Prototype so PlatformIO doesn't complain
+void announceNodeId();
 
-Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+Task taskAnnounceNodeId( TASK_SECOND * 1, TASK_FOREVER, &announceNodeId );
 
-void sendMessage() {
-  String msg = "Hi from node ";
-  msg += NODE;
-  // msg += mesh.getNodeId();
-  mesh.sendBroadcast( msg );
-  taskSendMessage.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
+void announceNodeId() {
+
+  String msg = NODE;
+  mesh.sendBroadcast(msg);
+  taskAnnounceNodeId.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
+
 }
 
 // Needed for painless library
 void receivedCallback( uint32_t from, String &msg ) {
+
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
-  if (count > 5) {
-    count = 0;
-    M5.Lcd.fillRect(0, 1, M5.Lcd.width(), M5.Lcd.height() - 1, BLACK);
-    M5.Lcd.setCursor(0, 0, 2);
+
+  if (count < 4) {
+    
+    M5.Lcd.printf(msg.c_str(), 0);
+    M5.Lcd.printf("\n", 0);
+    count+=1;
+
   }
   else {
-    count+=1;
-    M5.Lcd.printf("\n");
-    M5.Lcd.printf(msg.c_str(), 0);
+  
+    clearDisplay();
+    count = 0;
+
   }
+
 }
 
 void newConnectionCallback(uint32_t nodeId) {
@@ -44,7 +51,7 @@ void newConnectionCallback(uint32_t nodeId) {
 }
 
 void changedConnectionCallback() {
-  Serial.printf("Changed connections\n");
+    Serial.printf("Changed connections\n");
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
@@ -52,11 +59,12 @@ void nodeTimeAdjustedCallback(int32_t offset) {
 }
 
 void setup() {
+
   Serial.begin(115200);
   M5.begin();
-  int x = M5.IMU.Init(); //return 0 is ok, return -1 is unknown
+  int x = M5.IMU.Init();
   if(x!=0)
-    Serial.println("IMU initialisation fail!");  
+    Serial.printf("IMU initialisation fail!");  
 
   M5.Lcd.setTextSize(1);
   delay(3000);
@@ -75,14 +83,20 @@ void setup() {
   M5.Lcd.setRotation(3);
   M5.Lcd.fillScreen(BLACK);
   M5.Lcd.setCursor(0, 0, 2);
-  M5.Lcd.printf("STARTING NODE ", 0);
-  M5.Lcd.printf(NODE, 0);
+  M5.Lcd.printf("STARTING MAIN NODE\n");
 
-  userScheduler.addTask( taskSendMessage );
-  taskSendMessage.enable();
+  userScheduler.addTask( taskAnnounceNodeId );
+  taskAnnounceNodeId.enable();
 }
 
 void loop() {
   // it will run the user scheduler as well
   mesh.update();
+}
+
+void clearDisplay() {
+
+  M5.Lcd.fillRect(0, 20, M5.Lcd.width(), M5.Lcd.height() - 20, BLACK);
+  M5.Lcd.setCursor(0, 20, 2);
+
 }

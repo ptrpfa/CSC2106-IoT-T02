@@ -2,10 +2,10 @@
 #include "SSD1306Wire.h" // install library "ESP8266 and ESP32 OLED driver for..." version should be 4.4.1
 // #include <M5StickCPlus.h>
 
-#define   MESH_PREFIX     "whateverYouLike"
-#define   MESH_PASSWORD   "somethingSneaky"
+#define   MESH_PREFIX     "myMesh"
+#define   MESH_PASSWORD   "password"
 #define   MESH_PORT       5555
-#define NODE "A"
+#define NODE "LilyGo A"
 
 Scheduler userScheduler; // to control your personal task
 painlessMesh  mesh;

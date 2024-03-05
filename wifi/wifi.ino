@@ -5,9 +5,9 @@
 #include <ArduinoJson.h> // install library "ArduinoJson" by Benoit 
 
 // Configure the name and password of the connected wifi, and Server host !!!!!!!!!!!!!!!!!!!!!!
-const char* ssid        = "peteophelia"; // your hotspot name
-const char* password    = "aakf6248"; // your hotspot password
-const String server = "http://192.168.75.49:5000/"; // your computer ip address, ensure both are connected to hotspot
+const char* ssid        = "P"; // your hotspot name
+const char* password    = "bingchilling"; // your hotspot password
+const String server = "http://172.20.10.7:8000/"; // your computer ip address, ensure both are connected to hotspot
 String ipaddr = "";
 String third = "";
 String second = "";

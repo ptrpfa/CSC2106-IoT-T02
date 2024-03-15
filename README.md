@@ -24,6 +24,18 @@ Technologies:
 
 
 ## Getting Started
+- Run the LILYGO Main Nodes
+    - Ensure the following are installed on Arduino IDE when flashing the firmware to the LILYGO devices:
+        - Board Manager
+            > Install `esp32 by Espressif Systems`
+        - Library Manager
+            > Install `ESP8266 and ESP32 OLED driver for SSD1306`
+    - When flashing the LILYGO devices, choose `ESP32S3 Dev Module` as the board type
+
+- Run the M5StickCPlus Mesh Nodes
+    - Follow the instructions [here](https://docs.m5stack.com/en/quick_start/m5stickc_plus/arduino) to set up Arduino IDE before flashing the firmware to the M5StickCPlus devices.
+
+
 - Run the Flask server
     1. Ensure that you have `python3` and `pip3` installed on your machine. Click here for installation instructions if they are not already installed.
 

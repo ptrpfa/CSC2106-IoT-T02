@@ -7,6 +7,16 @@ from apps.home import blueprint
 from flask import render_template, request
 from flask_login import login_required
 from jinja2 import TemplateNotFound
+from pymongo import MongoClient
+
+uri = "mongodb+srv://csc2106:ppijBFqcBxQgFfAk@csc2106.tjdvgts.mongodb.net/?retryWrites=true&w=majority&appName=csc2106"
+
+# Create a new client and connect to the server
+client = MongoClient(uri)
+mongoDatabase = client["csc2106"]
+areaCoordinatesCollection = "area-coordinates"
+elderlyM5Collection = "elderly-m5"
+locationCollection = "location"
 
 m5_hardware_id = ""
 elderly = ""
@@ -34,6 +44,10 @@ def data():
             print("elderly: ", elderly)
             print("geofenced_area: ", geofenced_area)
             # print(request.form)
+            
+            # save to mongodb (on every POST request it will save to db, need to optimise)
+            mongoDatabase[elderlyM5Collection].insert_one(data)
+
             return "data received at server", 200
         else:
             return "No JSON data received", 400

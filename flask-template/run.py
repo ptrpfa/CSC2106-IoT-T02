@@ -1,8 +1,3 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
-
 import os
 from   flask_migrate import Migrate
 from   flask_minify  import Minify
@@ -10,6 +5,20 @@ from   sys import exit
 
 from apps.config import config_dict
 from apps import create_app, db
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+
+uri = "mongodb+srv://csc2106:ppijBFqcBxQgFfAk@csc2106.tjdvgts.mongodb.net/?retryWrites=true&w=majority&appName=csc2106"
+
+# Create a new client and connect to the server
+client = MongoClient(uri)
+mongoDatabase = client["csc2106"]
+areaCoordinatesCollection = "area-coordinates"
+elderlyM5Collection = "elderly-m5"
+locationCollection = "location"
+
+# sample to retrieve from db
+# print(mongoDatabase[elderlyM5Collection].find_one())
 
 # WARNING: Don't run with debug turned on in production!
 DEBUG = (os.getenv('DEBUG', 'False') == 'True')

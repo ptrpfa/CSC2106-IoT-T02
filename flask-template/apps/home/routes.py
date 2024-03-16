@@ -8,13 +8,37 @@ from flask import render_template, request
 from flask_login import login_required
 from jinja2 import TemplateNotFound
 
+m5_hardware_id = ""
+elderly = ""
+geofenced_area = ""
+first = ""
 
 @blueprint.route('/index')
-@login_required
 def index():
 
     return render_template('home/index.html', segment='index')
 
+
+
+@blueprint.route("/test", methods=['POST', 'GET'])
+def data():
+    global m5_hardware_id, elderly, geofenced_area, first
+    if request.method == 'POST':
+        data = request.json
+        if data:
+            m5_hardware_id = data.get('m5_hardware_id')
+            elderly = data.get('elderly')
+            geofenced_area = data.get('geofenced_area')
+            first = data.get('first')
+            print("m5_hardware_id: ", m5_hardware_id)
+            print("elderly: ", elderly)
+            print("geofenced_area: ", geofenced_area)
+            # print(request.form)
+            return "data received at server", 200
+        else:
+            return "No JSON data received", 400
+
+    return  render_template("test.html", m5_hardware_id=m5_hardware_id, elderly=elderly, geofenced_area=geofenced_area, segment='index')
 
 @blueprint.route('/<template>')
 @login_required

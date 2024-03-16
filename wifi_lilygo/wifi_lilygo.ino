@@ -7,11 +7,29 @@
 // Configure the name and password of the connected wifi, and Server host !!!!!!!!!!!!!!!!!!!!!!
 const char* ssid        = "name"; // your hotspot name
 const char* password    = "password"; // your hotspot password
-const String server = "http://192.168.75.49:5000/"; // your computer ip address, ensure both are connected to hotspot
+const String server = "http://192.168.141.49:5000/test"; // your computer ip address, ensure both are connected to hotspot
+
 String ipaddr = "";
-String third = "";
-String second = "";
-String first = "";
+
+// elderly m5
+String m5_hardware_id = ""; // location uses this
+String elderly = "";
+String geofenced_area = "";
+
+// area-coordinates
+// String name = "";
+// String start_x = "";
+// String end_x = "";
+// String start_y = "";
+// String end_y = "";
+// String geofenced_area = "";
+
+// location
+// String m5_hardware_id = ""; // already declared
+// String x = "";
+// String y = "";
+// String floor = "";
+// String timestamp = "";
 
 SSD1306Wire display(0x3c, 18, 17);
 
@@ -48,9 +66,26 @@ void setup() {
 
 void loop() {
   // GET data from other lilygo
-  third = "testing3";
-  second = "testing2";
-  first = "testing1";
+
+  // elderly
+  m5_hardware_id = "testing_id_to_db";
+  elderly = "colin";
+  geofenced_area = "Flat C";
+
+  // area-coordinates
+  // name = "" ;
+  // start_x = "";
+  // end_x = "";
+  // start_y = "";
+  // end_y = "";
+  // geofenced_area = "";
+  
+  // location
+  // x = "";
+  // y = "";
+  // floor = "";
+  // timestamp = "";
+
 
   // put your main code here, to run repeatedly:
   if(WiFi.status() == WL_CONNECTED){
@@ -63,17 +98,32 @@ void loop() {
 
     // Create JSON object and add data
     StaticJsonDocument<200> jsonDoc;
-    jsonDoc["ipaddr"] = ipaddr;
-    jsonDoc["third"] = third;
-    jsonDoc["second"] = second;
-    jsonDoc["first"] = first;
+    
+    // elderly
+    jsonDoc["m5_hardware_id"] = m5_hardware_id;
+    jsonDoc["elderly"] = elderly;
+    jsonDoc["geofenced_area"] = geofenced_area;
+
+    // area-coordinates
+    // jsonDoc["name"] = name;
+    // jsonDoc["start_x"] = start_x;
+    // jsonDoc["end_x"] = end_x;
+    // jsonDoc["start_y"] = start_y;
+    // jsonDoc["end_y"] = end_y;
+    // jsonDoc["geofenced_area"] = geofenced_area;
+
+    // location
+    // jsonDoc["m5_hardware_id"] = m5_hardware_id;
+    // jsonDoc["x"] = x;
+    // jsonDoc["y"] = y;
+    // jsonDoc["floor"] = floor;
+    // jsonDoc["timestamp"] = timestamp;
 
     // Serialize JSON object to string
     String jsonString;
     serializeJson(jsonDoc, jsonString);
 
     // Create JSON data and POST
-    // String requestData = "ipaddr=" + String(ipaddr);
     int httpCode = http.POST(jsonString);
     
     // check if there is error doing POST request from device

@@ -4,10 +4,11 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 from apps.home import blueprint
-from flask import render_template, request
+from flask import render_template, request, jsonify
 from flask_login import login_required
 from jinja2 import TemplateNotFound
 from pymongo import MongoClient
+import json
 
 uri = "mongodb+srv://csc2106:ppijBFqcBxQgFfAk@csc2106.tjdvgts.mongodb.net/?retryWrites=true&w=majority&appName=csc2106"
 
@@ -53,6 +54,28 @@ def data():
             return "No JSON data received", 400
 
     return  render_template("test.html", m5_hardware_id=m5_hardware_id, elderly=elderly, geofenced_area=geofenced_area, segment='index')
+
+@blueprint.route("/map")
+def map():
+    return  render_template("map.html", segment='index')
+
+@blueprint.route("/map-data")
+def sample_map_data():
+
+    data = {
+        "Elderly 1": [
+            {'x': 100, 'y': 100, 'label': 'Elderly 1'},
+        ],
+        "Elderly 2": [
+            {'x': 200, 'y': 500, 'label': 'Elderly 1'},
+        ],
+        "Elderly 3": [
+            {'x': 400, 'y': 200, 'label': 'Elderly 1'},
+        ]
+    }
+    
+    return jsonify(data)
+
 
 @blueprint.route('/<template>')
 @login_required

@@ -28,7 +28,7 @@ first = ""
 def index():
 
     return render_template('home/index.html', segment='index')
-
+"mongodb+srv://csc2106:ppijBFqcBxQgFfAk@csc2106.tjdvgts.mongodb.net/?retryWrites=true&w=majority&appName=csc2106"
 
 
 @blueprint.route("/test", methods=['POST', 'GET'])
@@ -62,6 +62,8 @@ def map():
 @blueprint.route("/map-data")
 def sample_map_data():
 
+    documents = mongoDatabase[elderlyM5Collection].find()
+
     data = {
         "Elderly 1": [
             {'x': 100, 'y': 100, 'label': 'Elderly 1'},
@@ -76,6 +78,11 @@ def sample_map_data():
     
     return jsonify(data)
 
+@blueprint.route("/fetch")
+def fetch_data():
+    documents = mongoDatabase[elderlyM5Collection].find_one()
+    # return render_template("hello_world.html", segment='index')
+    return render_template("fetch.html", documents=documents, segment='index')
 
 @blueprint.route('/<template>')
 @login_required

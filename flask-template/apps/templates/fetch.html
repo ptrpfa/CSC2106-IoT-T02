@@ -4,18 +4,14 @@
 
 {% block content %}
 
+<br><br><br><br><br><br><br><br>
 <div class="map-container">
     <!-- Your existing HTML structure -->
     <div class="info-wrapper col">
-        <div class="dropdown">
-            <button class="btn btn-primary dropdown-toggle" type="button" id="elderlydropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <span id="selectedElderly">Elderly 1</span>
-            </button>
-            <div class="elderly dropdown-menu" aria-labelledby="elderlydropdownMenuButton">
-                <!-- Dynamically generate dropdown items from MongoDB data -->
-                {% for document in documents %}
-                    <a class="elderly dropdown-item" href="#" data-elderly="{{ document['name'] }}">{{ document['name'] }}</a>
-                {% endfor %}
+        <div class="json-display">
+            <div id="jsonData">
+                <!-- Dynamically generate JSON data from MongoDB -->
+                {{ documents | tojson }}
             </div>
         </div>
     </div>

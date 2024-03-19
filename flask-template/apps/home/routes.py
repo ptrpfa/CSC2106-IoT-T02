@@ -62,7 +62,18 @@ def map():
 @blueprint.route("/map-data")
 def sample_map_data():
 
-    documents = mongoDatabase[elderlyM5Collection].find()
+    aggregated_data = {}
+    documents = mongoDatabase[locationCollection].find()
+
+    for document in documents:
+        x = document["document_id"]["x"]
+        y = document["document_id"]["y"]
+        label = document["document_id"]["m5_hardware_id"]
+
+        if label not in aggregated_data:
+            aggregated_data[label] = []
+
+        aggregated_data[label].append({'x': int(x), 'y': int(y), 'label': label})
 
     data = {
         "Elderly 1": [
@@ -76,13 +87,7 @@ def sample_map_data():
         ]
     }
     
-    return jsonify(data)
-
-@blueprint.route("/fetch")
-def fetch_data():
-    documents = mongoDatabase[elderlyM5Collection].find_one()
-    # return render_template("hello_world.html", segment='index')
-    return render_template("fetch.html", documents=documents, segment='index')
+    return jsonify(aggregated_data)
 
 @blueprint.route('/<template>')
 @login_required

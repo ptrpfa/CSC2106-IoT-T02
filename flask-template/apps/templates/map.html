@@ -37,8 +37,28 @@
                     <span id="selectedElderly">Select Elderly</span>
                 </button>
                 <div class="elderly dropdown-menu" aria-labelledby="elderlydropdownMenuButton">
-                    <!-- <a class="elderly dropdown-item" href="#" data-elderly="test_id">Elderly 1</a> -->
-                    <!-- <a class="elderly dropdown-item" href="#" data-elderly="test_id_2">Elderly 2</a> -->
+                    <script>
+                        fetch('/map-data')
+                        .then(response => response.json())
+                        .then(data => {
+                            const dropdownMenu = document.querySelector('.elderly.dropdown-menu');
+                            Object.keys(data).forEach((key) => {
+                                const item = data[key][0];
+                                const dropdownItem = document.createElement('a');
+                                dropdownItem.setAttribute('class', 'elderly dropdown-item');
+                                dropdownItem.setAttribute('href', '#');
+                                dropdownItem.setAttribute('data-elderly', key);
+                                dropdownItem.textContent = item.label;
+                                dropdownMenu.appendChild(dropdownItem);
+
+                                dropdownItem.addEventListener('click', function() {
+                                    document.getElementById('selectedElderly').textContent = this.textContent;
+                                });
+
+                            });
+                        })
+                        .catch(error => console.error('Error fetching data:', error));
+                    </script>
                 </div>
             </div>
         </div>
@@ -100,45 +120,6 @@
             displayElderlyPoints(elderlyKey);
         });
     });
-    
-    function fetchAndDisplayData() {
-        return new Promise((resolve, reject) => {
-        fetch('/map-data')
-            .then(response => response.json())
-            .then(data => {
-                elderlyData = data;
-
-                const dropdownMenu = document.querySelector('.elderly.dropdown-menu');
-                dropdownMenu.innerHTML = '';
-
-                for (const elderlyKey in elderlyData) {
-                    const dropdownItem = document.createElement('a');
-                    dropdownItem.classList.add('elderly', 'dropdown-item');
-                    dropdownItem.href = '#';
-                    dropdownItem.setAttribute('data-elderly', elderlyKey);
-                    dropdownItem.textContent = elderlyKey;
-                    dropdownMenu.appendChild(dropdownItem);
-                }
-
-                document.querySelectorAll('.elderly.dropdown-item').forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        let elderlyKey = this.getAttribute('data-elderly');
-                        displayElderlyPoints(elderlyKey);
-                    });
-                });
-
-                const firstElderlyKey = Object.keys(elderlyData)[0];
-                displayElderlyPoints(firstElderlyKey);
-
-                resolve();
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-                reject(error);
-            });
-    });
-    }
 
     function displayElderlyPoints(elderlyKey) {
         resetBackground(areas);
@@ -146,6 +127,7 @@
         fetch('/map-data')
         .then(response => response.json())
         .then(data => {
+
             let points = data[elderlyKey];
             if (points) {
                 points.forEach(point => {
@@ -171,14 +153,6 @@
         })
         .catch(error => console.error('Error fetching data:', error));
     }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        let firstDropdownItem = document.querySelector('.elderly.dropdown-item');
-        console.log(firstDropdownItem);
-        if (firstDropdownItem) {
-            firstDropdownItem.click();
-        }
-    });
 
 </script>
 

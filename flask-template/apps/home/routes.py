@@ -74,18 +74,6 @@ def sample_map_data():
             aggregated_data[label] = []
 
         aggregated_data[label].append({'x': int(x), 'y': int(y), 'label': label})
-
-    data = {
-        "Elderly 1": [
-            {'x': 100, 'y': 100, 'label': 'Elderly 1'},
-        ],
-        "Elderly 2": [
-            {'x': 200, 'y': 500, 'label': 'Elderly 1'},
-        ],
-        "Elderly 3": [
-            {'x': 400, 'y': 200, 'label': 'Elderly 1'},
-        ]
-    }
     
     return jsonify(aggregated_data)
 

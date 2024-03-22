@@ -29,32 +29,33 @@ first = ""
 def index():
 
     return render_template('home/index.html', segment='index')
-"mongodb+srv://csc2106:ppijBFqcBxQgFfAk@csc2106.tjdvgts.mongodb.net/?retryWrites=true&w=majority&appName=csc2106"
 
+@blueprint.route("/elderly-real-time-data")
+def realTimeData():
 
-@blueprint.route("/test", methods=['POST', 'GET'])
-def data():
-    global m5_hardware_id, elderly, geofenced_area, first
+    documents = mongoDatabase[elderlyM5Collection].find()
+    document = [doc for doc in documents]
+
+    return  render_template("elderlyRealTimeData.html", documents=document, segment='index')
+
+@blueprint.route("/lilygo-data", methods=['POST', 'GET'])
+def lilygoData():
+    global m5_hardware_id, elderly, geofenced_area
     if request.method == 'POST':
         data = request.json
         if data:
             m5_hardware_id = data.get('m5_hardware_id')
             elderly = data.get('elderly')
             geofenced_area = data.get('geofenced_area')
-            first = data.get('first')
-            print("m5_hardware_id: ", m5_hardware_id)
-            print("elderly: ", elderly)
-            print("geofenced_area: ", geofenced_area)
-            # print(request.form)
             
             # save to mongodb (on every POST request it will save to db, need to optimise)
             mongoDatabase[elderlyM5Collection].insert_one(data)
 
-            return "data received at server", 200
+            return "data received at server", 200 # return to lilygo
         else:
-            return "No JSON data received", 400
+            return "No JSON data received", 400 # return to lilygo
 
-    return  render_template("test.html", m5_hardware_id=m5_hardware_id, elderly=elderly, geofenced_area=geofenced_area, segment='index')
+    return  render_template("lilygoData.html", m5_hardware_id=m5_hardware_id, elderly=elderly, geofenced_area=geofenced_area, segment='index')
 
 @blueprint.route("/map")
 def map():

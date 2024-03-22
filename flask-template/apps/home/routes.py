@@ -9,6 +9,7 @@ from flask_login import login_required
 from jinja2 import TemplateNotFound
 from pymongo import MongoClient
 import json
+from twilio.rest import Client
 
 uri = "mongodb+srv://csc2106:ppijBFqcBxQgFfAk@csc2106.tjdvgts.mongodb.net/?retryWrites=true&w=majority&appName=csc2106"
 
@@ -77,6 +78,20 @@ def sample_map_data():
     
     return jsonify(aggregated_data)
 
+@blueprint.route('/send_message')
+def send_message():
+    account_sid = 'AC2ff910daad2f4262a2707322a0603c61'
+    auth_token = 'c931e1d104b2fa9f38045b2b16432b8f'
+    client = Client(account_sid, auth_token)
+
+    message = client.messages.create(
+        body="test message",
+        from_="+15642342977",
+        to="+6586686767"
+    )
+
+    print(message.sid)
+
 @blueprint.route('/<template>')
 @login_required
 def route_template(template):
@@ -97,7 +112,6 @@ def route_template(template):
 
     except:
         return render_template('home/page-500.html'), 500
-
 
 # Helper - Extract current page name from request
 def get_segment(request):

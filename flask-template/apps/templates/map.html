@@ -41,6 +41,7 @@
                         fetch('/map-data')
                         .then(response => response.json())
                         .then(data => {
+
                             const dropdownMenu = document.querySelector('.elderly.dropdown-menu');
                             Object.keys(data).forEach((key) => {
                                 const item = data[key][0];
@@ -53,6 +54,8 @@
 
                                 dropdownItem.addEventListener('click', function() {
                                     document.getElementById('selectedElderly').textContent = this.textContent;
+                                    let elderlyKey = this.getAttribute('data-elderly');
+                                    displayElderlyPoints(elderlyKey);
                                 });
 
                             });
@@ -112,14 +115,6 @@
     function clearPoints() {
         document.querySelectorAll('.point').forEach(point => point.remove());
     }
-
-    document.querySelectorAll('.elderly.dropdown-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            let elderlyKey = this.getAttribute('data-elderly');
-            displayElderlyPoints(elderlyKey);
-        });
-    });
 
     function displayElderlyPoints(elderlyKey) {
         resetBackground(areas);

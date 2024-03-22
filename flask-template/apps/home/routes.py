@@ -23,7 +23,10 @@ locationCollection = "location"
 m5_hardware_id = ""
 elderly = ""
 geofenced_area = ""
-first = ""
+x = ""
+y = ""
+floor = ""
+timestamp = ""
 
 @blueprint.route('/index')
 def index():
@@ -40,22 +43,26 @@ def realTimeData():
 
 @blueprint.route("/lilygo-data", methods=['POST', 'GET'])
 def lilygoData():
-    global m5_hardware_id, elderly, geofenced_area
+    global m5_hardware_id, elderly, geofenced_area, x , y, floor, timestamp
     if request.method == 'POST':
-        data = request.json
-        if data:
-            m5_hardware_id = data.get('m5_hardware_id')
-            elderly = data.get('elderly')
-            geofenced_area = data.get('geofenced_area')
+        lilygoData = request.json
+        if lilygoData:
+            m5_hardware_id = lilygoData.get('m5_hardware_id')
+            elderly = lilygoData.get('elderly')
+            geofenced_area = lilygoData.get('geofenced_area')
+            x = lilygoData.get('x')
+            y = lilygoData.get('y')
+            floor = lilygoData.get('floor')
+            timestamp = lilygoData.get('timestamp')
             
             # save to mongodb (on every POST request it will save to db, need to optimise)
-            mongoDatabase[elderlyM5Collection].insert_one(data)
+            mongoDatabase[elderlyM5Collection].insert_one(lilygoData)
 
             return "data received at server", 200 # return to lilygo
         else:
             return "No JSON data received", 400 # return to lilygo
 
-    return  render_template("lilygoData.html", m5_hardware_id=m5_hardware_id, elderly=elderly, geofenced_area=geofenced_area, segment='index')
+    return  render_template("lilygoData.html", m5_hardware_id=m5_hardware_id, elderly=elderly, geofenced_area=geofenced_area, x=x, y=y, floor=floor, timestamp=timestamp, segment='index')
 
 @blueprint.route("/map")
 def map():

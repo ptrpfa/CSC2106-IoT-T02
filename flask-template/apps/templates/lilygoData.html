@@ -71,10 +71,10 @@
 								<tbody>
 									<tr>
 										<td id="m5_hardware_id">{{ m5_hardware_id }}</td>
-										<td id="elderly">{{ elderly }}</td>
-										<td id="geofenced_area">{{ geofenced_area }}</td>
-										<td id="geofenced_area">{{ geofenced_area }}</td>
-										<td id="geofenced_area">{{ geofenced_area }}</td>
+										<td id="x">{{ x }}</td>
+										<td id="y">{{ y }}</td>
+										<td id="floor">{{ floor }}</td>
+										<td id="timestamp">{{ timestamp }}</td>
 									</tr>
 								</tbody>
 							</table>
@@ -92,11 +92,15 @@
     function updateData() {
         $.ajax({
             type: "POST",
-            url: "/test",  // Flask route for handling the POST request
-            success: function(data) {
-                $("#m5_hardware_id").text(data);  // Update the content of the #ip element with the received data
-                $("#elderly").text(data);  
-                $("#geofenced_area").text(data);  
+            url: "/lilygo-data",  // Flask route for handling the POST request
+            success: function(lilygoData) {
+                $("#m5_hardware_id").text(lilygoData);  // Update the content of the #ip element with the received data
+                $("#elderly").text(lilygoData);  
+                $("#geofenced_area").text(lilygoData);  
+                $("#x").text(lilygoData);  
+                $("#y").text(lilygoData);  
+                $("#floor").text(lilygoData);  
+                $("#timestamp").text(lilygoData);  
             }
         });
     }

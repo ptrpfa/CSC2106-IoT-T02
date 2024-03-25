@@ -74,3 +74,48 @@
     background-color: red;
     transform: translate(-50%, -50%); 
 }
+
+.info-wrapper {
+    padding: 8vh;
+}
+
+.info-wrapper .row {
+    height: 50%;
+}
+
+.info-wrapper h2 {
+    text-decoration: underline;
+}
+
+.info-wrapper .legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-wrapper .legend-item .legend-text {
+    font-size: medium;
+    color: black;
+}
+
+.info-wrapper .legend-red-point {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    background-color: red;
+    transform: translate(-50%, -50%); 
+}
+
+.info-wrapper .legend-yellow-point { 
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    background-color: yellow;
+    transform: translate(-50%, -50%); 
+}

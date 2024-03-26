@@ -30,7 +30,6 @@ timestamp = ""
 
 @blueprint.route('/index')
 def index():
-
     return render_template('home/index.html', segment='index')
 
 @blueprint.route("/elderly-real-time-data")

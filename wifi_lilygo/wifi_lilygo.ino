@@ -7,7 +7,7 @@
 // Configure the name and password of the connected wifi, and Server host !!!!!!!!!!!!!!!!!!!!!!
 const char* ssid        = "name"; // your hotspot name
 const char* password    = "password"; // your hotspot password
-const String server = "http://192.168.141.49:5000/test"; // your computer ip address, ensure both are connected to hotspot
+const String server = "http://34.126.129.174:80/lilygo-data"; // your computer ip address, ensure both are connected to hotspot
 
 String ipaddr = "";
 
@@ -26,10 +26,10 @@ String geofenced_area = "";
 
 // location
 // String m5_hardware_id = ""; // already declared
-// String x = "";
-// String y = "";
-// String floor = "";
-// String timestamp = "";
+String x = "";
+String y = "";
+String levelfloor = "";
+String timestamp = "";
 
 SSD1306Wire display(0x3c, 18, 17);
 
@@ -68,9 +68,9 @@ void loop() {
   // GET data from other lilygo
 
   // elderly
-  m5_hardware_id = "testing_id_to_db";
-  elderly = "colin";
-  geofenced_area = "Flat C";
+  m5_hardware_id = "testing_id_to_cloud";
+  elderly = "peter";
+  geofenced_area = "Flat B";
 
   // area-coordinates
   // name = "" ;
@@ -81,10 +81,10 @@ void loop() {
   // geofenced_area = "";
   
   // location
-  // x = "";
-  // y = "";
-  // floor = "";
-  // timestamp = "";
+  x = "7";
+  y = "10";
+  levelfloor = "1";
+  timestamp = "time";
 
 
   // put your main code here, to run repeatedly:
@@ -114,10 +114,10 @@ void loop() {
 
     // location
     // jsonDoc["m5_hardware_id"] = m5_hardware_id;
-    // jsonDoc["x"] = x;
-    // jsonDoc["y"] = y;
-    // jsonDoc["floor"] = floor;
-    // jsonDoc["timestamp"] = timestamp;
+    jsonDoc["x"] = x;
+    jsonDoc["y"] = y;
+    jsonDoc["floor"] = levelfloor;
+    jsonDoc["timestamp"] = timestamp;
 
     // Serialize JSON object to string
     String jsonString;
@@ -143,7 +143,7 @@ void loop() {
 
     http.end();
 
-    delay(3000);
+    delay(10000);
   }
 
 }

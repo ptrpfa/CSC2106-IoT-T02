@@ -53,7 +53,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for document in documents %}
+                                    {% for document in documents|reverse %}
                                     <tr>
                                         <td>{{ document['m5_hardware_id'] }}</td>
                                         <td>{{ document['elderly'] }}</td>
@@ -75,6 +75,12 @@
 {% block javascripts %}
 
 <script>
+    $(document).ready(function() {
+        $('#basic-datatables').DataTable({
+        });
+
+    });
+
     let refreshTimer; // Variable to hold the timer reference
     let refreshIntervalSeconds = 10; // Default refresh interval in seconds (10 seconds)
 

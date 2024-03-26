@@ -52,8 +52,8 @@ struct NodeInfo {
 NodeInfo myInfo;
 
 void sendMessage() {
-  String msg = getReadings();
-  mesh.sendBroadcast(msg);
+  // String msg = getReadings();
+  mesh.sendBroadcast(myInfo.toJSONString());
   // taskSendMessage.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
 }
 
@@ -154,18 +154,18 @@ void setup() {
   M5.begin();
   int x = M5.IMU.Init();
   // Anchor 1
-  double x = 2.0;
-  double y = 5.0;
+  double x_coords = 2.0;
+  double y_coords = 5.0;
 
   // Anchor 2
-  // double x = 5.0;
-  // double y = 3.0;
+  // double x_coords = 5.0;
+  // double y_coords = 3.0;
 
-  // Anchor 3
-  // double x = 3.0;
-  // double y = 1.0;
+  // // Anchor 3
+  // double x_coords = 3.0;
+  // double y_coords = 1.0;
 
-  storeCoordinates(x, y);
+  storeCoordinates(x_coords, y_coords);
 
   if (x != 0)
     Serial.printf("IMU initialisation fail!");
@@ -174,11 +174,12 @@ void setup() {
   M5.Lcd.setRotation(3);
   M5.Lcd.fillScreen(BLACK);
   M5.Lcd.setCursor(0, 0, 2);
-  
+  M5.Lcd.printf("Coordinates set: %lf, %lf", x_coords, y_coords);
+
   initMesh();
   delay(1500);
   initNodeObject();
-  M5.Lcd.setCursor(0, 2, 2);
+  M5.Lcd.setCursor(0, 20, 2);
   delay(1500);
   userScheduler.addTask(taskSendMainNode);
   taskSendMainNode.enable();

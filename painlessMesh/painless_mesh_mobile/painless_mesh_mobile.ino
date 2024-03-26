@@ -47,6 +47,20 @@ int findNodeByMAC(const String& macAddress) {
 }
 
 void estimateLocation() {
+  // Find MAC address in nodeList
+  Serial.printf("ALL NODES IN NODELIST\n");
+  int nodeListCount = 0;
+  for (auto& node : nodeList) {
+    nodeListCount++;
+    Serial.println(node.macAddress);
+    Serial.printf("x: %lf, y: %lf\n", node.x, node.y);
+  }
+  if (nodeListCount < 3) {
+    Serial.println("Not enough information!\n");
+    return;
+  }
+
+  Serial.println("Estimating location");
   // Get all RSSI
   std::vector<std::pair<String, int>> rssiVector;
 
@@ -60,6 +74,8 @@ void estimateLocation() {
       // Store BSSID and RSSI for each network found
       String msg;
       if (WiFi.SSID(i) == "myMesh") {
+        Serial.println("WiFi BSSID: " + WiFi.BSSIDstr(i) + "\n");
+        
         rssiVector.push_back(std::make_pair(WiFi.BSSIDstr(i), WiFi.RSSI(i)));
       }
     }
@@ -71,33 +87,49 @@ void estimateLocation() {
     return;
   }
   
+  Serial.println("At least three beacons found");
+
   // Get nearest 3 mac addresses
   std::sort(rssiVector.begin(), rssiVector.end(), [](const std::pair<String, int>& a, const std::pair<String, int>& b) {
     return a.second > b.second;
   });
+  Serial.println("RSSI sorted");
 
-  JSONVar nearestThree;
+  // JSONVar nearestThree;
+  double nearestThree[3];
+  std::pair<String, int> nearestThreeArray[3];
+
   int count = 0;
   for (auto& pair : rssiVector) {
     if (count++ >= 3) break;
-    nearestThree[pair.first] = pair.second;
+    nearestThreeArray[count] = std::make_pair(pair.first, pair.second);
+
+    Serial.printf("Pair %d First: ", count);
+    Serial.println(pair.first);
+    Serial.printf("Pair %d Second: %d\n", count, pair.second);
+    
+    // nearestThree[pair.first] = pair.second;
   }
 
   // Compare nodeList to get three coordinates
   std::vector<Point> topThreeCoordinates;
 
   // Iterate through the top three RSSI values
+  Serial.println("Calculating distance\n");
   for (int i = 0; i < 3; i++) {
     // Extract the MAC address from the nearestThree JSONVar
-    String targetMac = (const char*)nearestThree.keys()[i];
-
+    // String targetMac = nearestThree.keys()[i];
+    String targetMac = nearestThreeArray[i].first;
+    Serial.printf("Getting distance for");
+    Serial.println(targetMac);
     // Convert RSSI to distances
     // Constants
     double n = 4.0;
     double A = -70;
 
     // Calculate
-    double distance = pow(10, ((A - (double)nearestThree[targetMac]) / (10 * n)));
+    double distance = pow(10, ((A - (double)nearestThreeArray[i].second) / (10 * n)));
+    Serial.printf("Distance #%d: %lf\n", i, distance);
 
     nearestThree[i] = distance;
 
@@ -110,23 +142,32 @@ void estimateLocation() {
       }
     }
   }
+  Serial.printf("Points: \n");
+  Serial.printf("%lf, %lf \n", topThreeCoordinates[0].getX(), topThreeCoordinates[0].getY());
+  Serial.printf("%lf, %lf \n", topThreeCoordinates[1].getX(), topThreeCoordinates[1].getY());
+  Serial.printf("%lf, %lf \n", topThreeCoordinates[2].getX(), topThreeCoordinates[2].getY());
 
+  Serial.printf("Getting triangulation data\n");
   // Get triangulation
   Triangle triangle = Triangle(topThreeCoordinates[0], topThreeCoordinates[1], topThreeCoordinates[2]);
+  Serial.printf("Made Triangle\n");
   Point estimated_point = triangle.getTriangulation(nearestThree[0], nearestThree[1], nearestThree[2]);
+  Serial.printf("Got estimated point\n");
 
   double x = estimated_point.getX();  // To get estimated x coordinate
   double y = estimated_point.getX();  // To get estimated y coordinate
+  Serial.printf("Got estimated x and y: %lf, %lf\n", x, y);
 
   // Send to main node
   JSONVar data;
+  Serial.printf("Sending to main node\n");
   data["x"] = x;
   data["y"] = y;
   data["macAddress"] = WiFi.macAddress().c_str();
   data["nodeID"] = (int)mesh.getNodeId();
 
   String output = JSON.stringify(data);
-   mesh.sendSingle(mainNode, output);
+  mesh.sendSingle(mainNode, output);
 }
 
 void sendMessage() {
@@ -191,7 +232,10 @@ void receivedCallback(uint32_t from, String& msg) {
     return;
   }
 
-  if ((const char*)newInfo["type"] == "BEACON") {
+  Serial.println(newInfo["type"]);
+  
+  if (strcmp((const char*)newInfo["type"], "BEACON") == 0) {
+    Serial.println("Received new beacon\n");
     String macAddress = (const char*)newInfo["macAddress"];
     int index = findNodeByMAC(macAddress);
 
@@ -209,6 +253,8 @@ void receivedCallback(uint32_t from, String& msg) {
       newNode.nodeId = (int)newInfo["nodeID"];
       nodeList.push_back(newNode);
     }
+  } else {
+    Serial.println("not a beacon\n");
   }
 }
 

@@ -78,11 +78,12 @@ def sample_map_data():
         x = document["document_id"]["x"]
         y = document["document_id"]["y"]
         label = document["document_id"]["m5_hardware_id"]
+        floor = document["document_id"]["floor"]
 
         if label not in aggregated_data:
             aggregated_data[label] = []
 
-        aggregated_data[label].append({'x': int(x), 'y': int(y), 'label': label})
+        aggregated_data[label].append({'x': int(x), 'y': int(y), 'label': label, 'floor': floor})
     
     return jsonify(aggregated_data)
 

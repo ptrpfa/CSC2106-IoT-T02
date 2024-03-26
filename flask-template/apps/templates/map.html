@@ -48,6 +48,10 @@
                         <span class="legend-text">Elderly Location</span>
                     </div>
                 </Legend>
+                <div class="floor-item">
+                    <span>Current floor:</span>
+                    <span></span>
+                </div>
             </div>
             <div class="dropdown-row row">
                 <div class="dropdown">
@@ -142,8 +146,15 @@
         .then(response => response.json())
         .then(data => {
 
+            console.log(data);
+
             let points = data[elderlyKey];
+
             if (points) {
+
+                const floorElement = document.querySelector('.floor-item span:last-child');
+                floorElement.textContent = `${points[0].floor}`;
+
                 points.forEach(point => {
                     const scaledX = point.x * scaleX;
                     const scaledY = point.y * scaleY;

@@ -65,9 +65,11 @@ void sendMainNode() {
     double y = preferences.getDouble("y", 0.0);
     preferences.end();
 
-    String msg = "Hello Main Node from ";
+    String msg = "Hello Main Node from Beacon (";
     msg += x;
+    msg += ", ";
     msg += y;
+    msg += ")";
     mesh.sendSingle(mainNode, msg);
   }
 }
@@ -128,9 +130,6 @@ void initMesh() {
   Serial.println("Starting node");
   Serial.println(mesh.getNodeId());
 
-  M5.Lcd.setRotation(3);
-  M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setCursor(0, 0, 2);
   M5.Lcd.printf("STARTING NODE %s\n", NODE);
 }
 
@@ -151,17 +150,35 @@ void initNodeObject() {
 }
 
 void setup() {
-
   Serial.begin(115200);
   M5.begin();
   int x = M5.IMU.Init();
+  // Anchor 1
+  double x = 2.0;
+  double y = 5.0;
+
+  // Anchor 2
+  // double x = 5.0;
+  // double y = 3.0;
+
+  // Anchor 3
+  // double x = 3.0;
+  // double y = 1.0;
+
+  storeCoordinates(x, y);
+
   if (x != 0)
     Serial.printf("IMU initialisation fail!");
 
   M5.Lcd.setTextSize(1);
+  M5.Lcd.setRotation(3);
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setCursor(0, 0, 2);
+  
   initMesh();
   delay(1500);
   initNodeObject();
+  M5.Lcd.setCursor(0, 2, 2);
   delay(1500);
   userScheduler.addTask(taskSendMainNode);
   taskSendMainNode.enable();

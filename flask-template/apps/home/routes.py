@@ -53,9 +53,25 @@ def lilygoData():
             y = lilygoData.get('y')
             floor = lilygoData.get('floor')
             timestamp = lilygoData.get('timestamp')
+
+            # Create JSON objects for each collection
+            elderly_m5_data = {
+                'm5_hardware_id': m5_hardware_id,
+                'elderly': elderly,
+                'geofenced_area': geofenced_area,
+            }
+
+            location_data = {
+                'm5_hardware_id': m5_hardware_id,
+                'x': x,
+                'y': y,
+                'floor': floor,
+                'timestamp': timestamp
+            }
             
             # save to mongodb (on every POST request it will save to db, need to optimise)
-            mongoDatabase[elderlyM5Collection].insert_one(lilygoData)
+            mongoDatabase[elderlyM5Collection].insert_one(elderly_m5_data)
+            mongoDatabase[locationCollection].insert_one(location_data)
 
             return "data received at server", 200 # return to lilygo
         else:

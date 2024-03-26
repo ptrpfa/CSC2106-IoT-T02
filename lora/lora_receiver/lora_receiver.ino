@@ -21,9 +21,6 @@
    https://jgromes.github.io/RadioLib/
 */
 
-
-
-
 #include <RadioLib.h>
 #include "boards.h"
 
@@ -68,19 +65,14 @@ void setup()
         }
     }
 #endif
-#ifdef EDP_DISPLAY
-    if (state != RADIOLIB_ERR_NONE)
-    {
-        display.setRotation(1);
-        display.fillScreen(GxEPD_WHITE);
-        display.setTextColor(GxEPD_BLACK);
-        display.setFont(&FreeMonoBold9pt7b);
-        display.setCursor(0, 15);
-        display.println("Initializing: FAIL!");
-        display.update();
+    if (u8g2) {
+        u8g2->clearBuffer();
+        do
+        {
+            u8g2->setCursor(0, 16);
+            u8g2->println("RECEIVER");
+        } while (u8g2->nextPage());
     }
-#endif  
-
     if (state == RADIOLIB_ERR_NONE) {
         Serial.println(F("success!"));
     } else {
@@ -94,14 +86,8 @@ void setup()
     radio.setRfSwitchPins(RADIO_RX_PIN, RADIO_TX_PIN);
 #endif
 
-
-#ifdef LILYGO_T3_S3_V1_0
-    // T3 S3 V1.1 with PA Version Set output power to 3 dBm    !!Cannot be greater than 3dbm!!
-    int8_t TX_Power = 3;
-#else
     // T3 S3 V1.2 (No PA) Version Set output power to 3 dBm    !!Cannot be greater than 3dbm!!
     int8_t TX_Power = 13;
-#endif
     if (radio.setOutputPower(TX_Power) == RADIOLIB_ERR_INVALID_OUTPUT_POWER) {
         Serial.println(F("Selected output power is invalid for this module!"));
         while (true);
@@ -130,6 +116,7 @@ void setup()
         Serial.println(F("Selected coding rate is invalid for this module!"));
         while (true);
     }
+
     // set the function that will be called
     // when packet transmission is finished
     radio.setDio1Action(setFlag);
@@ -195,7 +182,7 @@ void loop()
             {
                 u8g2->clearBuffer();
                 char buf[256];
-                u8g2->drawStr(0, 12, "Received OK!");
+                u8g2->drawStr(0, 12, "Received OK (NORMAL!");
                 snprintf(buf, sizeof(buf), "Data:%s", counter);
                 u8g2->drawStr(0, 26, buf);
                 snprintf(buf, sizeof(buf), "RSSI:%.2f", radio.getRSSI());
@@ -205,29 +192,6 @@ void loop()
                 u8g2->sendBuffer();
             }
 #endif
-
-#ifdef EDP_DISPLAY
-            display.setRotation(1);
-            display.fillScreen(GxEPD_WHITE);
-            display.setTextColor(GxEPD_BLACK);
-            display.setFont(&FreeMonoBold9pt7b);
-            display.setCursor(0, 15);
-            display.println("[SX128x] Received:");
-            display.setCursor(0, 35);
-            display.println("DATA:"); 
-            display.setCursor(55, 35);
-            display.println(counter); 
-            display.setCursor(0, 55);
-            display.println("RSSI:"); 
-            display.setCursor(55, 55);
-            display.println(radio.getRSSI());
-            display.setCursor(0, 75);
-            display.println("SNR :"); 
-            display.setCursor(55, 75);
-            display.println(radio.getSNR());  
-            display.update();
-#endif
-
         } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
             // packet was received, but is malformed
             Serial.println(F("[SX1280] CRC error!"));
@@ -247,5 +211,3 @@ void loop()
         enableInterrupt = true;
     }
 }
-
-

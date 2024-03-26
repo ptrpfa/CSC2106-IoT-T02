@@ -17,7 +17,6 @@
    https://jgromes.github.io/RadioLib/
 */
 
-
 #include <RadioLib.h>
 #include "boards.h"
 
@@ -67,42 +66,33 @@ void setup()
         }
     }
 #endif
-#ifdef EDP_DISPLAY
-if (state != RADIOLIB_ERR_NONE) {
-    display.setRotation(1);
-    display.fillScreen(GxEPD_WHITE);
-    display.setTextColor(GxEPD_BLACK);
-    display.setFont(&FreeMonoBold9pt7b);
-    display.setCursor(0, 15);
-    display.println("Initializing: FAIL!");
-    display.update();
-}
-#endif
-    if (state == RADIOLIB_ERR_NONE) {
-        Serial.println(F("success!"));
-    } else {
-        Serial.print(F("failed, code "));
-        Serial.println(state);
-        while (true);
+  if (u8g2) {
+          u8g2->clearBuffer();
+          do
+          {
+              u8g2->setCursor(0, 16);
+              u8g2->println("TRANSMITTER");
+          } while (u8g2->nextPage());
     }
+  if (state == RADIOLIB_ERR_NONE) {
+      Serial.println(F("success!"));
+  } else {
+      Serial.print(F("failed, code "));
+      Serial.println(state);
+      while (true);
+  }
 
 #if defined(RADIO_RX_PIN) && defined(RADIO_TX_PIN)
     //Set ANT Control pins
     radio.setRfSwitchPins(RADIO_RX_PIN, RADIO_TX_PIN);
 #endif
 
-#ifdef LILYGO_T3_S3_V1_0
-    // T3 S3 V1.1 with PA Version Set output power to 3 dBm    !!Cannot be greater than 3dbm!!
-    int8_t TX_Power = 3;
-#else
     // T3 S3 V1.2 (No PA) Version Set output power to 3 dBm    !!Cannot be greater than 3dbm!!
     int8_t TX_Power = 13;
-#endif
     if (radio.setOutputPower(TX_Power) == RADIOLIB_ERR_INVALID_OUTPUT_POWER) {
         Serial.println(F("Selected output power is invalid for this module!"));
         while (true);
     }
-
 
     // set carrier frequency to 2410.5 MHz
     if (radio.setFrequency(2400.0) == RADIOLIB_ERR_INVALID_FREQUENCY) {
@@ -128,13 +118,13 @@ if (state != RADIOLIB_ERR_NONE) {
         while (true);
     }
 
-
     // set the function that will be called
     // when packet transmission is finished
     radio.setDio1Action(setFlag);
 
     // start transmitting the first packet
     Serial.print(F("[SX1280] Sending first packet ... "));
+    transmissionState = radio.startTransmit("Hello Word!");
 
     // you can transmit C-string or Arduino string up to
     // 256 characters long
@@ -145,9 +135,6 @@ if (state != RADIOLIB_ERR_NONE) {
     //                   0x89, 0xAB, 0xCD, 0xEF
     //                  };
     // state = radio.startTransmit(byteArr, 8);
-
-
-    transmissionState = radio.startTransmit("Hello Word!");
 }
 
 
@@ -172,19 +159,10 @@ void loop()
 #ifdef HAS_DISPLAY
             if (u8g2) {
                 u8g2->clearBuffer();
-                u8g2->drawStr(0, 12, "Transmitting: OK!");
+                u8g2->drawStr(0, 12, "Transmitting (NORMAL): OK!");
                 u8g2->drawStr(0, 30, ("TX:" + String(counter)).c_str());
                 u8g2->sendBuffer();
             }
-#endif
-#ifdef EDP_DISPLAY
-            display.setRotation(1);
-            display.fillScreen(GxEPD_WHITE);
-            display.setTextColor(GxEPD_BLACK);
-            display.setFont(&FreeMonoBold9pt7b);
-            display.setCursor(0, 15);
-            display.println("Transmitting: OK!");
-            display.update();
 #endif
         } else {
             Serial.print(F("failed, code "));
@@ -216,5 +194,3 @@ void loop()
         enableInterrupt = true;
     }
 }
-
-

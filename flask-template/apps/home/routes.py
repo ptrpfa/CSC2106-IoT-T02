@@ -75,6 +75,14 @@ def lilygoData():
 
             return "data received at server", 200 # return to lilygo
         else:
+            m5_hardware_id = ""
+            elderly = ""
+            geofenced_area = ""
+            x = ""
+            y = ""
+            floor = ""
+            timestamp = ""
+
             return "No JSON data received", 400 # return to lilygo
 
     return  render_template("lilygoData.html", m5_hardware_id=m5_hardware_id, elderly=elderly, geofenced_area=geofenced_area, x=x, y=y, floor=floor, timestamp=timestamp, segment='index')

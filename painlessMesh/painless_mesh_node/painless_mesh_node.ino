@@ -154,16 +154,16 @@ void setup() {
   M5.begin();
   int x = M5.IMU.Init();
   // Anchor 1
-  double x_coords = 2.0;
-  double y_coords = 5.0;
+  // double x_coords = 2.0;
+  // double y_coords = 5.0;
 
   // Anchor 2
   // double x_coords = 5.0;
   // double y_coords = 3.0;
 
   // // Anchor 3
-  // double x_coords = 3.0;
-  // double y_coords = 1.0;
+  double x_coords = 3.0;
+  double y_coords = 1.0;
 
   storeCoordinates(x_coords, y_coords);
 
@@ -182,6 +182,8 @@ void setup() {
   M5.Lcd.setCursor(0, 20, 2);
   delay(1500);
   userScheduler.addTask(taskSendMainNode);
+  userScheduler.addTask(taskSendMessage);
+  taskSendMessage.enable();
   taskSendMainNode.enable();
 }
 

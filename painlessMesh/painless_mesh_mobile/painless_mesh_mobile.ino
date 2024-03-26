@@ -77,7 +77,7 @@ void estimateLocation() {
         Serial.println("WiFi BSSID: " + WiFi.BSSIDstr(i) + "\n");
         
         rssiVector.push_back(std::make_pair(WiFi.BSSIDstr(i), WiFi.RSSI(i)));
-      }
+      } 
     }
   }
   WiFi.scanDelete();
@@ -101,12 +101,14 @@ void estimateLocation() {
 
   int count = 0;
   for (auto& pair : rssiVector) {
-    if (count++ >= 3) break;
+    if (count >= 3) break;
     nearestThreeArray[count] = std::make_pair(pair.first, pair.second);
 
     Serial.printf("Pair %d First: ", count);
     Serial.println(pair.first);
     Serial.printf("Pair %d Second: %d\n", count, pair.second);
+
+    count++;
     
     // nearestThree[pair.first] = pair.second;
   }
@@ -135,8 +137,13 @@ void estimateLocation() {
 
     // Find MAC address in nodeList
     for (auto& node : nodeList) {
-      if (node.macAddress == targetMac) {
+      String nodeMacAddressSubstr = node.macAddress.substring(0,14);
+      String targetMacSubstr = targetMac.substring(0,14);
+      Serial.println(nodeMacAddressSubstr);
+      Serial.println(targetMacSubstr);
+      if (strcmp(nodeMacAddressSubstr.c_str(), targetMacSubstr.c_str()) == 0) {
         // Add the node's coordinates to topThreeCoordinates
+        Serial.println("Found");
         topThreeCoordinates.push_back(Point(node.x, node.y));
         break;  // Stop searching through nodeList once a match is found
       }
@@ -155,7 +162,7 @@ void estimateLocation() {
   Serial.printf("Got estimated point\n");
 
   double x = estimated_point.getX();  // To get estimated x coordinate
-  double y = estimated_point.getX();  // To get estimated y coordinate
+  double y = estimated_point.getY();  // To get estimated y coordinate
   Serial.printf("Got estimated x and y: %lf, %lf\n", x, y);
 
   // Send to main node

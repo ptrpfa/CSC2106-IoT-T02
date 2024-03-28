@@ -21,29 +21,41 @@ void announceNodeId() {
 
   String msg = NODE;
   mesh.sendBroadcast(msg);
-  taskAnnounceNodeId.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
-
+  // taskAnnounceNodeId.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
 }
 
 // Needed for painless library
 void receivedCallback( uint32_t from, String &msg ) {
 
-  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  // Parse message received
+  JSONVar message = JSON.parse(msg);
 
-  if (count < 4) {
-    
-    M5.Lcd.printf(msg.c_str(), 0);
-    M5.Lcd.printf("\n", 0);
-    count+=1;
-
+  // Check if parsing succeeded
+  if (JSON.typeof(message) == "undefined") {
+    Serial.println("Not a JSON");
+    return;
   }
+
+  // Only process messages with type of LOCATION (ignore BEACON messages)
+  if (strcmp((const char*)message["type"], "LOCATION") == 0) {
+    Serial.println("Received new location information!\n");
+    Serial.printf("Received from %u msg=%s\n", from, msg.c_str());
+
+     // Display on M5 LCD
+    if (count < 4) {
+      M5.Lcd.printf(msg.c_str(), 0);
+      M5.Lcd.printf("\n", 0);
+      count+=1;
+
+    }
+    else {
+      clearDisplay();
+      count = 0;
+    }
+  } 
   else {
-  
-    clearDisplay();
-    count = 0;
-
+    Serial.println("Not a LOCATION message!\n");
   }
-
 }
 
 void newConnectionCallback(uint32_t nodeId) {

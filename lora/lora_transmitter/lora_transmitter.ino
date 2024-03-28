@@ -1,4 +1,6 @@
 #include <RadioLib.h>
+#include <Arduino_JSON.h>
+#include <WiFi.h>
 #include "boards.h"
 
 SX1280 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
@@ -105,7 +107,7 @@ void loop()
       // packet was successfully sent
       u8g2->clearBuffer();
       u8g2->drawStr(0, 12, "Transmitting..");
-      u8g2->drawStr(0, 30, ("TX:" + String(counter)).c_str());
+      u8g2->drawStr(0, 30, ("TX: " + String(counter)).c_str());
       u8g2->sendBuffer();
     } 
     else {
@@ -114,27 +116,27 @@ void loop()
 
     // wait a second before transmitting again
     delay(1000);
-    
+
     /* 
-      This example transmits LoRa packets with one second delays
-      between them. Each packet contains up to 256 bytes
+      Each packet contains up to 256 bytes
       of data, in the form of:
         - Arduino String
         - null-terminated char array (C-string)
         - arbitrary binary data (byte array)
-
-      you can transmit C-string or Arduino string up to
-      256 characters long
-      transmissionState = radio.startTransmit("Hello World!");
-      you can also transmit byte array up to 256 bytes long
-
-      byte byteArr[] = {0x01, 0x23, 0x45, 0x67,
-                  0x89, 0xAB, 0xCD, 0xEF};
-      int state = radio.startTransmit(byteArr, 8);
+      you can transmit C-string or Arduino string up to 256 characters long
     */
-  
+
+    // Send to main node
+    JSONVar data;
+    data["x"] = 10.000;
+    data["y"] = 12.00;
+    data["macAddress"] = WiFi.macAddress().c_str();
+    data["floor"] = (int)counter;
+    String message = JSON.stringify(data);
+
     // start transmitting the packet
-    transmissionState = radio.startTransmit("ABANG!");
+    transmissionState = radio.startTransmit(message.c_str());
+
     // we're ready to send more packets, enable interrupt service routine
     enableTransmitInterrupt = true;
   }

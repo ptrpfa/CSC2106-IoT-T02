@@ -1,4 +1,5 @@
 #include <RadioLib.h>
+#include <Arduino_JSON.h>
 #include "boards.h"
 
 SX1280 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
@@ -110,44 +111,58 @@ void loop()
 
     // you can read received data as an Arduino String
     String str;
+    // Receive
     int state = radio.readData(str);
+    JSONVar newInfo = JSON.parse(str);
 
-    // uint32_t counter;
-    // int state = radio.readData((uint8_t *)&counter, 4);
-
-    // you can also read received data as byte array
-    /*
-      byte byteArr[8];
-      int state = radio.readData(byteArr, 8);
-    */
+    String macAddress = (const char*)newInfo["macAddress"];
+    double x = (double)newInfo["x"];
+    double y = (double)newInfo["y"];
+    int floor = (int)newInfo["floor"];
 
     if (state == RADIOLIB_ERR_NONE) {
-      // packet was successfully received
-      u8g2->clearBuffer();
-      char buf[256];
-      u8g2->drawStr(0, 12, "Received OK (NORMAL!");
-      // snprintf(buf, sizeof(buf), "Data:%s", counter);
-      snprintf(buf, sizeof(buf), "Data:%s", str);
-      u8g2->drawStr(0, 26, buf);
-      // print RSSI (Received Signal Strength Indicator)
-      snprintf(buf, sizeof(buf), "RSSI:%.2f", radio.getRSSI());
-      u8g2->drawStr(0, 40, buf);
-      // print SNR (Signal-to-Noise Ratio)
-      snprintf(buf, sizeof(buf), "SNR:%.2f dB", radio.getSNR());
-      u8g2->drawStr(0, 54, buf);
-      u8g2->sendBuffer();
+      // Clear the internal memory
+      u8g2->clearBuffer(); 
+
+      // Print macAddress
+      u8g2->setCursor(0, 12); // Set cursor position
+      u8g2->println(macAddress);
+
+      // Print x
+      u8g2->setCursor(0, 26); // Set cursor position for the next line
+      u8g2->print("X: ");
+      u8g2->print(x);
+
+      // Print y
+      u8g2->setCursor(0, 40); // Set cursor position for the next line
+      u8g2->print("Y: ");
+      u8g2->print(y);
+
+      // Print floor
+      u8g2->setCursor(0, 54); // Set cursor position for the next line
+      u8g2->print("Floor: ");
+      u8g2->print(floor);
+
+      // Print RSSI (Received Signal Strength Indicator)
+      // u8g2->setCursor(0, 68); 
+      // u8g2->print("RSSI: ");
+      // u8g2->print(radio.getRSSI(), 2); // Print with 2 decimal places
+
+      // Print SNR (Signal-to-Noise Ratio)
+      // u8g2->setCursor(0, 82);
+      // u8g2->print("SNR: ");
+      // u8g2->print(radio.getSNR(), 2); // Print with 2 decimal places
+
+      u8g2->sendBuffer(); // Transfer internal memory to the display
     } 
-    
     else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
       // packet was received, but is malformed
-      Serial.println(F("[SX1280] CRC error!"));
+      printToDisplay("[SX1280] CRC error!", u8g2);
     } 
     else {
       // some other error occurred
-      Serial.print(F("[SX1280] Failed, code "));
-      Serial.println(state);
+      printToDisplay("[SX1280] Failed!", u8g2);
     }
-
     // put module back to listen mode
     radio.startReceive();
   

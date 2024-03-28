@@ -47,35 +47,45 @@ Ticker ledTicker;
 #define initPMU()
 #define disablePeripherals()
 
+// Function to print to OLED screen
+void printToDisplay(const char* message, U8G2* display) {
+  if (display) {
+    display->clearBuffer();
+    display->setCursor(0, 16);
+    display->println(message);
+    display->sendBuffer();
+  }
+}
+
 void initBoard()
 {
-    Serial.begin(115200);
-    Serial.println("initBoard");
-    SPI.begin(RADIO_SCLK_PIN, RADIO_MISO_PIN, RADIO_MOSI_PIN);
+  Serial.begin(115200);
+  Serial.println("initBoard");
+  SPI.begin(RADIO_SCLK_PIN, RADIO_MISO_PIN, RADIO_MOSI_PIN);
 
-#if defined(HAS_DISPLAY)
+  #if defined(HAS_DISPLAY)
     Wire.begin(I2C_SDA, I2C_SCL);
-#endif
+  #endif
 
-initPMU();
+  initPMU();
 
-#ifdef BOARD_LED
+  #ifdef BOARD_LED
     /*
     * T-BeamV1.0, V1.1 LED defaults to low level as trun on,
     * so it needs to be forced to pull up
     * * * * */
-#if LED_ON == LOW
+  #if LED_ON == LOW
     gpio_hold_dis(GPIO_NUM_4);
-#endif
+  #endif
     pinMode(BOARD_LED, OUTPUT);
     ledTicker.attach_ms(500, []() {
         static bool level;
         digitalWrite(BOARD_LED, level);
         level = !level;
     });
-#endif
+  #endif
 
-#ifdef HAS_DISPLAY
+  #ifdef HAS_DISPLAY
     Wire.beginTransmission(0x3C);
     if (Wire.endTransmission() == 0) {
         Serial.println("Started OLED");
@@ -101,11 +111,11 @@ initPMU();
         u8g2->setFont(u8g2_font_fur11_tf);
         delay(3000);
     }
-#endif
+  #endif
 
-#ifdef HAS_DISPLAY
+  #ifdef HAS_DISPLAY
     if (u8g2) {
         u8g2->setFont(u8g2_font_ncenB08_tr);
     }
-#endif
+  #endif
 }

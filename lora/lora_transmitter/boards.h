@@ -47,6 +47,16 @@ Ticker ledTicker;
 #define initPMU()
 #define disablePeripherals()
 
+// Function to print to OLED screen
+void printToDisplay(const char* message, U8G2* display) {
+  if (display) {
+    display->clearBuffer();
+    display->setCursor(0, 16);
+    display->println(message);
+    display->sendBuffer();
+  }
+}
+
 void initBoard()
 {
     Serial.begin(115200);

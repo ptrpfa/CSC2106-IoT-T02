@@ -116,6 +116,7 @@ void loop()
     JSONVar newInfo = JSON.parse(str);
 
     String macAddress = (const char*)newInfo["macAddress"];
+    String loraAddress = (const char*)newInfo["loraAddress"];
     double x = (double)newInfo["x"];
     double y = (double)newInfo["y"];
     int floor = (int)newInfo["floor"];
@@ -128,18 +129,22 @@ void loop()
       u8g2->setCursor(0, 12); // Set cursor position
       u8g2->println(macAddress);
 
+      // Print loraAddress
+      u8g2->setCursor(0, 26); // Set cursor position
+      u8g2->println(loraAddress);
+
       // Print x
-      u8g2->setCursor(0, 26); // Set cursor position for the next line
+      u8g2->setCursor(0, 40); // Set cursor position for the next line
       u8g2->print("X: ");
       u8g2->print(x);
 
       // Print y
-      u8g2->setCursor(0, 40); // Set cursor position for the next line
+      u8g2->setCursor(0, 54); // Set cursor position for the next line
       u8g2->print("Y: ");
       u8g2->print(y);
 
       // Print floor
-      u8g2->setCursor(0, 54); // Set cursor position for the next line
+      u8g2->setCursor(0, 68); // Set cursor position for the next line
       u8g2->print("Floor: ");
       u8g2->print(floor);
 

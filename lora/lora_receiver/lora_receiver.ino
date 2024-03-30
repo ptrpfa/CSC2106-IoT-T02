@@ -121,53 +121,80 @@ void loop()
     double y = (double)newInfo["y"];
     int floor = (int)newInfo["floor"];
 
-    if (state == RADIOLIB_ERR_NONE) {
-      // Clear the internal memory
-      u8g2->clearBuffer(); 
+    // Clear the internal memory
+    u8g2->clearBuffer(); 
 
-      // Print macAddress
-      u8g2->setCursor(0, 12); // Set cursor position
-      u8g2->println(macAddress);
+    // Print macAddress
+    u8g2->setCursor(0, 12); // Set cursor position
+    u8g2->println(macAddress);
 
-      // Print loraAddress
-      u8g2->setCursor(0, 26); // Set cursor position
-      u8g2->println(loraAddress);
+    // Print loraAddress
+    u8g2->setCursor(0, 26); // Set cursor position
+    u8g2->println(loraAddress);
 
-      // Print x
-      u8g2->setCursor(0, 40); // Set cursor position for the next line
-      u8g2->print("X: ");
-      u8g2->print(x);
+    // Print x
+    u8g2->setCursor(0, 40); // Set cursor position for the next line
+    u8g2->print("X: ");
+    u8g2->print(x);
 
-      // Print y
-      u8g2->setCursor(0, 54); // Set cursor position for the next line
-      u8g2->print("Y: ");
-      u8g2->print(y);
+    // Print y
+    u8g2->setCursor(0, 54); // Set cursor position for the next line
+    u8g2->print("Y: ");
+    u8g2->print(y);
 
-      // Print floor
-      u8g2->setCursor(0, 68); // Set cursor position for the next line
-      u8g2->print("Floor: ");
-      u8g2->print(floor);
+    // Print floor
+    u8g2->setCursor(0, 68); // Set cursor position for the next line
+    u8g2->print("Floor: ");
+    u8g2->print(floor);
+    u8g2->sendBuffer(); // Transfer internal memory to the display
+    
+    // if (state == RADIOLIB_ERR_NONE) {
+    //   // Clear the internal memory
+    //   u8g2->clearBuffer(); 
 
-      // Print RSSI (Received Signal Strength Indicator)
-      // u8g2->setCursor(0, 68); 
-      // u8g2->print("RSSI: ");
-      // u8g2->print(radio.getRSSI(), 2); // Print with 2 decimal places
+    //   // Print macAddress
+    //   u8g2->setCursor(0, 12); // Set cursor position
+    //   u8g2->println(macAddress);
 
-      // Print SNR (Signal-to-Noise Ratio)
-      // u8g2->setCursor(0, 82);
-      // u8g2->print("SNR: ");
-      // u8g2->print(radio.getSNR(), 2); // Print with 2 decimal places
+    //   // Print loraAddress
+    //   u8g2->setCursor(0, 26); // Set cursor position
+    //   u8g2->println(loraAddress);
 
-      u8g2->sendBuffer(); // Transfer internal memory to the display
-    } 
-    else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
-      // packet was received, but is malformed
-      printToDisplay("[SX1280] CRC error!", u8g2);
-    } 
-    else {
-      // some other error occurred
-      printToDisplay("[SX1280] Failed!", u8g2);
-    }
+    //   // Print x
+    //   u8g2->setCursor(0, 40); // Set cursor position for the next line
+    //   u8g2->print("X: ");
+    //   u8g2->print(x);
+
+    //   // Print y
+    //   u8g2->setCursor(0, 54); // Set cursor position for the next line
+    //   u8g2->print("Y: ");
+    //   u8g2->print(y);
+
+    //   // Print floor
+    //   u8g2->setCursor(0, 68); // Set cursor position for the next line
+    //   u8g2->print("Floor: ");
+    //   u8g2->print(floor);
+
+    //   // Print RSSI (Received Signal Strength Indicator)
+    //   // u8g2->setCursor(0, 68); 
+    //   // u8g2->print("RSSI: ");
+    //   // u8g2->print(radio.getRSSI(), 2); // Print with 2 decimal places
+
+    //   // Print SNR (Signal-to-Noise Ratio)
+    //   // u8g2->setCursor(0, 82);
+    //   // u8g2->print("SNR: ");
+    //   // u8g2->print(radio.getSNR(), 2); // Print with 2 decimal places
+
+    //   u8g2->sendBuffer(); // Transfer internal memory to the display
+    // } 
+    // else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
+    //   // packet was received, but is malformed
+    //   printToDisplay("[SX1280] CRC error!", u8g2);
+    // } 
+    // else {
+    //   // some other error occurred
+    //   printToDisplay("[SX1280] Failed!", u8g2);
+    // }
     // put module back to listen mode
     radio.startReceive();
   

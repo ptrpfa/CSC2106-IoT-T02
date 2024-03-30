@@ -72,9 +72,6 @@ void pmReceiveCallback( uint32_t from, String &msg ) {
       // reset flag
       transmittedFlag = false;
 
-      // wait a second before transmitting again
-      // delay(1000);
-
       // start transmitting the packet
       transmissionState = radio.startTransmit(lora_message.c_str());
 
@@ -84,7 +81,7 @@ void pmReceiveCallback( uint32_t from, String &msg ) {
       // Display on LCD
       if(count < 4) {
         display.clear();
-        display.drawString(0, 0, msg.c_str());
+        display.drawString(0, 0, lora_message.c_str());
         // if (transmissionState == RADIOLIB_ERR_NONE) {
         //   // packet was successfully sent
         //   u8g2->clearBuffer();

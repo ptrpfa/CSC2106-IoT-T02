@@ -52,7 +52,6 @@ def lilygoData():
             x = lilygoData.get('x')
             y = lilygoData.get('y')
             floor = lilygoData.get('floor')
-            timestamp = lilygoData.get('timestamp')
 
             # Create JSON objects for each collection
             elderly_m5_data = {
@@ -66,7 +65,6 @@ def lilygoData():
                 'x': x,
                 'y': y,
                 'floor': floor,
-                'timestamp': timestamp
             }
             
             # save to mongodb (on every POST request it will save to db, need to optimise)
@@ -98,7 +96,6 @@ def sample_map_data():
         if label not in aggregated_data:
             aggregated_data[label] = []
             aggregated_data[label].append({'x': int(x), 'y': int(y), 'label': label, 'floor': floor})
-
     
     return jsonify(aggregated_data)
 

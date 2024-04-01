@@ -3,38 +3,114 @@
 #include <HTTPClient.h>
 #include "SSD1306Wire.h" // install library "ESP8266 and ESP32 OLED driver for..." version should be 4.4.1
 #include <ArduinoJson.h> // install library "ArduinoJson" by Benoit 
+#include <Arduino_JSON.h>
+#include <RadioLib.h>
+#include "boards.h"
+
+SX1280 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
 
 // Configure the name and password of the connected wifi, and Server host !!!!!!!!!!!!!!!!!!!!!!
-const char* ssid        = "name"; // your hotspot name
-const char* password    = "password"; // your hotspot password
+const char* ssid        = "peteophelia"; // your hotspot name
+const char* password    = "aakf6248"; // your hotspot password
 const String server = "http://34.126.129.174:80/lilygo-data"; // your computer ip address, ensure both are connected to hotspot
 
 String ipaddr = "";
 
 // elderly m5
-String m5_hardware_id = ""; // location uses this
+String macAddress = "";
 String elderly = "";
 String geofenced_area = "";
 
-// area-coordinates
-// String name = "";
-// String start_x = "";
-// String end_x = "";
-// String start_y = "";
-// String end_y = "";
-// String geofenced_area = "";
-
 // location
-// String m5_hardware_id = ""; // already declared
-String x = "";
-String y = "";
-String levelfloor = "";
-String timestamp = "";
+String loraAddress = "";
+double x = 0.0;
+double y = 0.0;
+int levelfloor = 0;
+
+// flag to indicate that a packet was received
+volatile bool receivedFlag = true;
+
+// disable interrupt when it's not needed
+volatile bool enableReceiveInterrupt = true;
 
 SSD1306Wire display(0x3c, 18, 17);
 
+// Function to initialise LoRa
+int initLora() {
+  // initialize SX1280 with default settings
+  printToDisplay("[SX1280] Initialising ...", u8g2);
+  int state = radio.begin();
+  if (state != RADIOLIB_ERR_NONE) {
+    printToDisplay("Failed Initialisation!", u8g2);
+  }
+  else {
+    printToDisplay("Radio initialised!", u8g2);
+  }
+
+  #if defined(RADIO_RX_PIN) && defined(RADIO_TX_PIN)
+      //Set ANT Control pins
+      radio.setRfSwitchPins(RADIO_RX_PIN, RADIO_TX_PIN);
+  #endif
+
+  // T3 S3 V1.2 (No PA) Version Set output power to 3 dBm (Cannot be greater than 3dbm)
+  int8_t TX_Power = 13;
+  if (radio.setOutputPower(TX_Power) == RADIOLIB_ERR_INVALID_OUTPUT_POWER) {
+      Serial.println(F("Selected output power is invalid for this module!"));
+      while (true);
+  }
+
+  // set carrier frequency to 2410.5 MHz
+  if (radio.setFrequency(2400.0) == RADIOLIB_ERR_INVALID_FREQUENCY) {
+      Serial.println(F("Selected frequency is invalid for this module!"));
+      while (true);
+  }
+
+  // set bandwidth to 203.125 kHz
+  if (radio.setBandwidth(203.125) == RADIOLIB_ERR_INVALID_BANDWIDTH) {
+      Serial.println(F("Selected bandwidth is invalid for this module!"));
+      while (true);
+  }
+
+  // set spreading factor to 10
+  if (radio.setSpreadingFactor(10) == RADIOLIB_ERR_INVALID_SPREADING_FACTOR) {
+      Serial.println(F("Selected spreading factor is invalid for this module!"));
+      while (true);
+  }
+
+  // set coding rate to 6
+  if (radio.setCodingRate(6) == RADIOLIB_ERR_INVALID_CODING_RATE) {
+      Serial.println(F("Selected coding rate is invalid for this module!"));
+      while (true);
+  }
+  return state;
+}
+
+// Callback function once a complete packet is received (this function MUST be 'void' type and MUST NOT have any arguments!)
+void loraReceiveCallback(void) {
+  // check if the interrupt is enabled
+  if (!enableReceiveInterrupt) {
+      return;
+  }
+  else {
+    // we got a packet, set the flag
+    receivedFlag = true;
+  }
+}
+
 void setup() {
   // put your setup code here, to run once:
+  // Initialise board
+  initBoard();
+  
+  // When the power is turned on, a delay is required.
+  delay(1500);
+
+  // Initialise LoRa
+  int state = initLora();
+
+  // set the function that will be called when packet transmission is finished
+  radio.setDio1Action(loraReceiveCallback);
+
   Serial.begin(115200);
   delay(100);
   display.init();
@@ -60,35 +136,67 @@ void setup() {
   display.drawString(0, 10, "IP address:");
   display.drawString(60, 10, ipaddr);
   display.display();
-
   
 }
 
 void loop() {
-  // GET data from other lilygo
-
-  // elderly
-  m5_hardware_id = "testing_id_to_cloud";
-  elderly = "peter";
-  geofenced_area = "Flat B";
-
-  // area-coordinates
-  // name = "" ;
-  // start_x = "";
-  // end_x = "";
-  // start_y = "";
-  // end_y = "";
-  // geofenced_area = "";
-  
-  // location
-  x = "7";
-  y = "10";
-  levelfloor = "1";
-  timestamp = "time";
-
 
   // put your main code here, to run repeatedly:
   if(WiFi.status() == WL_CONNECTED){
+  // GET data from other lilygo
+
+    if (receivedFlag) {
+      // disable the interrupt service routine while processing the data
+      enableReceiveInterrupt = false;
+
+      // reset flag
+      receivedFlag = false;
+
+      // you can read received data as an Arduino String
+      String str;
+      // Receive
+      int state = radio.readData(str);
+      JSONVar newInfo = JSON.parse(str);
+
+      macAddress = (const char*)newInfo["macAddress"];
+      loraAddress = (const char*)newInfo["loraAddress"];
+      x = (double)newInfo["x"];
+      y = (double)newInfo["y"];
+      
+      levelfloor = (int)newInfo["floor"];
+
+      // Clear the internal memory
+      u8g2->clearBuffer(); 
+
+      // Print macAddress
+      u8g2->setCursor(0, 12); // Set cursor position
+      u8g2->println(macAddress);
+
+      // Print loraAddress
+      u8g2->setCursor(0, 26); // Set cursor position
+      u8g2->println(loraAddress);
+
+      // Print x
+      u8g2->setCursor(0, 40); // Set cursor position for the next line
+      u8g2->print("X: ");
+      u8g2->print(x);
+
+      // Print y
+      u8g2->setCursor(0, 54); // Set cursor position for the next line
+      u8g2->print("Y: ");
+      u8g2->print(y);
+
+      // Print floor
+      u8g2->setCursor(0, 68); // Set cursor position for the next line
+      u8g2->print("Floor: ");
+      u8g2->print(levelfloor);
+      u8g2->sendBuffer(); // Transfer internal memory to the display
+      
+      radio.startReceive();
+    
+      // we're ready to receive more packets, enable interrupt service routine
+      enableReceiveInterrupt = true;
+    }
 
     HTTPClient http;
 
@@ -100,24 +208,14 @@ void loop() {
     StaticJsonDocument<200> jsonDoc;
     
     // elderly
-    jsonDoc["m5_hardware_id"] = m5_hardware_id;
+    jsonDoc["m5_hardware_id"] = macAddress;
     jsonDoc["elderly"] = elderly;
     jsonDoc["geofenced_area"] = geofenced_area;
 
-    // area-coordinates
-    // jsonDoc["name"] = name;
-    // jsonDoc["start_x"] = start_x;
-    // jsonDoc["end_x"] = end_x;
-    // jsonDoc["start_y"] = start_y;
-    // jsonDoc["end_y"] = end_y;
-    // jsonDoc["geofenced_area"] = geofenced_area;
-
     // location
-    // jsonDoc["m5_hardware_id"] = m5_hardware_id;
     jsonDoc["x"] = x;
     jsonDoc["y"] = y;
     jsonDoc["floor"] = levelfloor;
-    jsonDoc["timestamp"] = timestamp;
 
     // Serialize JSON object to string
     String jsonString;

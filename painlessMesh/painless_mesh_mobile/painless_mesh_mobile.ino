@@ -109,8 +109,6 @@ void estimateLocation() {
     Serial.printf("Pair %d Second: %d\n", count, pair.second);
 
     count++;
-    
-    // nearestThree[pair.first] = pair.second;
   }
 
   // Compare nodeList to get three coordinates
@@ -170,6 +168,7 @@ void estimateLocation() {
   Serial.printf("Sending to main node\n");
   data["x"] = x;
   data["y"] = y;
+  data["type"] = "LOCATION";
   data["macAddress"] = WiFi.macAddress().c_str();
   data["nodeID"] = (int)mesh.getNodeId();
 
@@ -302,8 +301,8 @@ void initMesh() {
 }
 
 void setup() {
-
   Serial.begin(115200);
+  pinMode(BUTTON_A_PIN, INPUT);
   M5.begin();
   int x = M5.IMU.Init();
   if (x != 0)
@@ -317,6 +316,18 @@ void setup() {
 void loop() {
   // it will run the user scheduler as well
   mesh.update();
+  if (digitalRead(BUTTON_A_PIN) == LOW) { 
+    JSONVar data;
+    Serial.printf("Sending panic to main node\n");
+    data["macAddress"] = WiFi.macAddress().c_str();
+    data["nodeID"] = (int)mesh.getNodeId();
+    data["type"] = "PANIC";
+
+    String output = JSON.stringify(data);
+    mesh.sendSingle(mainNode, output);
+    while(digitalRead(BUTTON_A_PIN) == LOW); // Wait for button release to avoid multiple writes
+  }
+
 }
 
 void clearDisplay() {

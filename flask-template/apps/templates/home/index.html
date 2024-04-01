@@ -93,31 +93,9 @@
 													<span id="selectedElderly">Select Elderly</span>
 												</button>
 												<div class="elderly dropdown-menu" aria-labelledby="elderlydropdownMenuButton">
-													<script>
-														fetch('/map-data')
-														.then(response => response.json())
-														.then(data => {
-								
-															const dropdownMenu = document.querySelector('.elderly.dropdown-menu');
-															Object.keys(data).forEach((key) => {
-																const item = data[key][0];
-																const dropdownItem = document.createElement('a');
-																dropdownItem.setAttribute('class', 'elderly dropdown-item');
-																dropdownItem.setAttribute('data-elderly', key);
-																dropdownItem.textContent = item.label;
-																dropdownMenu.appendChild(dropdownItem);
-								
-																dropdownItem.addEventListener('click', function() {
-																	document.getElementById('selectedElderly').textContent = this.textContent;
-																	let elderlyKey = this.getAttribute('data-elderly');
-																	displayElderlyPoints(elderlyKey);
-																});
-								
-															});
-														})
-														.catch(error => console.error('Error fetching data:', error));
-													</script>
+													<!-- Dropdown items will be populated here -->
 												</div>
+												<button id="refreshDropdown" class="btn btn-warning btn-border btn-round btn-sm">Refresh</button>
 											</div>
 										</div>
 									</div>
@@ -221,6 +199,40 @@
 			})
 			.catch(error => console.error('Error fetching data:', error));
 		}
+
+		function populateDropdown() {
+			fetch('/map-data')
+			.then(response => response.json())
+			.then(data => {
+				const dropdownMenu = document.querySelector('.elderly.dropdown-menu');
+				dropdownMenu.innerHTML = ''; // Clear current items
+				Object.keys(data).forEach((key) => {
+					const item = data[key][0];
+					const dropdownItem = document.createElement('a');
+					dropdownItem.setAttribute('class', 'elderly dropdown-item');
+					dropdownItem.setAttribute('data-elderly', key);
+					dropdownItem.textContent = item.label;
+					dropdownMenu.appendChild(dropdownItem);
+
+					dropdownItem.addEventListener('click', function() {
+						document.getElementById('selectedElderly').textContent = this.textContent;
+						let elderlyKey = this.getAttribute('data-elderly');
+						displayElderlyPoints(elderlyKey);
+					});
+				});
+			})
+			.catch(error => console.error('Error fetching data:', error));
+		}
+
+		// Call populateDropdown on page load
+		document.addEventListener('DOMContentLoaded', function() {
+			populateDropdown();
+		});
+
+		// Refresh button functionality
+		document.getElementById('refreshDropdown').addEventListener('click', function() {
+			populateDropdown(); // Re-populate the dropdown on click
+		});
 	
 	</script>
 

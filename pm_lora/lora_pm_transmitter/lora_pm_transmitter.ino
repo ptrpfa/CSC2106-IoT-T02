@@ -12,19 +12,20 @@
 #define   MAINNODE        "A"
 #define   NODE            "A"
 
-/*  */
+// Display
+SSD1306Wire display(0x3c, 18, 17);
+
+// painlessMesh
 Scheduler userScheduler;
 painlessMesh  mesh;
 
-SSD1306Wire display(0x3c, 18, 17);
-
 int count = 0;
 
+// Function prototypes
 void announceNodeId();
-
 Task taskAnnounceNodeId( TASK_SECOND * 1, TASK_FOREVER, &announceNodeId );
 
-/* LORA */
+// LoRa module
 SX1280 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
 
 // save transmission state between loops
@@ -38,86 +39,102 @@ volatile bool enableTransmitInterrupt = true;
 
 uint32_t counter = 0;
 
+// painlessMesh function to announce to other nodes that it is the main node
 void announceNodeId() {
   String msg = NODE;
   mesh.sendBroadcast(msg);
   // taskAnnounceNodeId.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
 }
 
+// painlessMesh callback function upon receive of a painlessMesh message
 void pmReceiveCallback( uint32_t from, String &msg ) {
   // Parse message received
   JSONVar message = JSON.parse(msg);
 
   // Check if parsing succeeded
   if (JSON.typeof(message) == "undefined") {
-    Serial.println("Not a JSON");
+    Serial.printf("Not a JSON message!\n");
     return;
   }
+  else {
+    // Only process messages with type of LOCATION (ignore BEACON messages)
+    if (strcmp((const char*)message["type"], "LOCATION") == 0) {
+      // printToDisplay(msg.c_str(), u8g2);
+      
+      // Set LoRa node address
+      message["loraAddress"] = WiFi.macAddress().c_str();
+      // Floor no (TEMPORARY)
+      message["floor"] = (int)counter;
 
-  // Only process messages with type of LOCATION (ignore BEACON messages)
-  if (strcmp((const char*)message["type"], "LOCATION") == 0) {
-    Serial.println("Received new location information!\n");
-    Serial.printf("Received from %u msg=%s\n", from, msg.c_str());
+      /* Parse data */
+      // MAC Address of painlessMesh node
+      String macAddress = (const char*)message["macAddress"];
+      // MAC Address of LoRa node
+      String loraAddress = (const char*)message["loraAddress"];
+      double x = (double)message["x"];
+      double y = (double)message["y"];
+      int floor = (int)message["floor"];
 
-    // Send message received to LoRa
-    message["loraAddress"] = WiFi.macAddress().c_str();
-    message["floor"] = (int)counter;
-    String lora_message = JSON.stringify(message);
+      // Clear display
+      display.clear();
 
-    // check if the previous transmission finished
-    if(transmittedFlag) {
-      // disable the interrupt service routine while processing the data
-      enableTransmitInterrupt = false;
+      // Print TX(X)
+      display.drawString(0, 12, "TX(X): " + String(x));
 
-      // reset flag
-      transmittedFlag = false;
+      // Print Y
+      display.drawString(0, 26, "Y: " + String(y));
 
-      // start transmitting the packet
+      // Print Floor
+      display.drawString(0, 40, "Floor: " + String(floor));
+
+      // Print macAddress
+      display.drawString(0, 54, "Mac Address: " + macAddress);
+
+      // Print loraAddress
+      display.drawString(0, 68, "LoRa Address: " + loraAddress);
+
+      // Display message
+      display.display();
+
+      // Convert JSONVar to a string
+      String lora_message = JSON.stringify(message);
+
+      // Send painlessMesh message received to LoRa
       transmissionState = radio.startTransmit(lora_message.c_str());
 
       // we're ready to send more packets, enable interrupt service routine
       enableTransmitInterrupt = true;
 
-      // Display on LCD
-      if(count < 4) {
-        display.clear();
-        display.drawString(0, 0, lora_message.c_str());
-        // if (transmissionState == RADIOLIB_ERR_NONE) {
-        //   // packet was successfully sent
-        //   u8g2->clearBuffer();
-        //   u8g2->drawStr(0, 12, "Transmitting..");
-        //   u8g2->drawStr(0, 30, ("TX: " + String(counter)).c_str());
-        //   u8g2->sendBuffer();
-        // } 
-        // else {
-        //   printToDisplay("transmission failed!", u8g2);
-        // }
-        display.display();
-        count+=1;
-      }
-      else {
-        display.clear(); // This clears the entire display
-        display.display(); // Update the display to reflect the clear operation
-        count = 0;
-      }
-
+      // if (transmissionState == RADIOLIB_ERR_NONE) {
+      //   // packet was successfully sent
+      //   u8g2->clearBuffer();
+      //   u8g2->drawStr(0, 12, "Transmitting..");
+      //   u8g2->drawStr(0, 30, ("TX: " + String(counter)).c_str());
+      //   u8g2->sendBuffer();
+      // } 
+      // else {
+      //   printToDisplay("transmission failed!", u8g2);
+      // }
+    } 
+    else {
+      Serial.printf("Not a LOCATION message!\n");
     }
-  } 
-  else {
-    Serial.println("Not a LOCATION message!\n");
   }
 }
 
+// painlessMesh callback for new connections
 void newConnectionCallback(uint32_t nodeId) {
-    Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
 }
 
+// painlessMesh callback for changed connections
 void changedConnectionCallback() {
   Serial.printf("Changed connections\n");
 }
 
+// painlessMesh callback for adjusted time
 void nodeTimeAdjustedCallback(int32_t offset) {
-    Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
+  Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
 }
 
 // Function to initialise LoRa
@@ -183,21 +200,15 @@ void loraTransmitCallback(void) {
   }
 }
 
+// Program entrypoint
 void setup() {
-  /* LORA */
   // Initialise board
   initBoard();
   
   // When the power is turned on, a delay is required.
   delay(1500);
 
-  // Initialise LoRa
-  int state = initLora();
-
-  // set callback function when packet transmission is finished
-  radio.setDio1Action(loraTransmitCallback);
-
-  /* painlessMesh */
+  // Initialise display
   Serial.begin(115200);
   delay(100);
   display.init();
@@ -205,32 +216,38 @@ void setup() {
   display.setFont(ArialMT_Plain_10);
   display.flipScreenVertically();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
-  
   delay(3000);
 
+  // Initialise LoRa
+  int state = initLora();
+
+  // Set LoRa callback function when packet transmission is finished
+  radio.setDio1Action(loraTransmitCallback);
+
+  // painlessMesh setup
   //mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
   mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
-
   mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT );
   mesh.onReceive(&pmReceiveCallback);
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
+  userScheduler.addTask( taskAnnounceNodeId );
+  taskAnnounceNodeId.enable();
+
+  // DEBUGGING
   Serial.println("Starting node");
   Serial.println(mesh.getNodeId());
 
+  // Display
   display.clear();
   display.drawString(0, 0,"STARTING MAIN NODE ");
   display.drawString(0, 10, NODE);
   display.display();
-
-  userScheduler.addTask( taskAnnounceNodeId );
-  taskAnnounceNodeId.enable();
 }
 
-void loop()
-{
-  // it will run the user scheduler as well
+void loop() {
+  // Keep painlessMesh alive
   mesh.update();
 }

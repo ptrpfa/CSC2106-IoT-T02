@@ -87,7 +87,7 @@ def map():
 def sample_map_data():
 
     aggregated_data = {}
-    documents = mongoDatabase[locationCollection].find()
+    documents = mongoDatabase[locationCollection].find().sort("_id", -1)
 
     for document in documents:
         x = document["document_id"]["x"]
@@ -97,8 +97,8 @@ def sample_map_data():
 
         if label not in aggregated_data:
             aggregated_data[label] = []
+            aggregated_data[label].append({'x': int(x), 'y': int(y), 'label': label, 'floor': floor})
 
-        aggregated_data[label].append({'x': int(x), 'y': int(y), 'label': label, 'floor': floor})
     
     return jsonify(aggregated_data)
 

@@ -85,13 +85,13 @@ def map():
 def sample_map_data():
 
     aggregated_data = {}
-    documents = mongoDatabase[locationCollection].find().sort("_id", -1)
+    map_documents = mongoDatabase[locationCollection].find().sort("_id", -1)
 
-    for document in documents:
-        x = document["document_id"]["x"]
-        y = document["document_id"]["y"]
-        label = document["document_id"]["m5_hardware_id"]
-        floor = document["document_id"]["floor"]
+    for document in map_documents:
+        x = document["x"]
+        y = document["y"]
+        label = document["m5_hardware_id"]
+        floor = document["floor"]
 
         if label not in aggregated_data:
             aggregated_data[label] = []

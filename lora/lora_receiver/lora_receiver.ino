@@ -2,6 +2,16 @@
 #include <Arduino_JSON.h>
 #include "boards.h"
 
+/* 
+  Both transmitter and receiver must have the same:
+  - carrier frequency
+  - bandwidth
+  - spreading factor
+  - coding rate
+  - sync word
+*/
+
+// LoRa module
 SX1280 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
 
 // flag to indicate that a packet was received
@@ -72,17 +82,18 @@ void loraReceiveCallback(void) {
   }
 }
 
+// Program entrypoint
 void setup() {
   // Initialise board
   initBoard();
 
   // When the power is turned on, a delay is required.
   delay(1500);
-  
+
   // Initialise LoRa
   int state = initLora();
 
-  // set the function that will be called when packet transmission is finished
+  // Set LoRa callback function when a packet is received
   radio.setDio1Action(loraReceiveCallback);
 }
 
@@ -113,13 +124,14 @@ void loop()
     String str;
     // Receive
     int state = radio.readData(str);
-    JSONVar newInfo = JSON.parse(str);
+    JSONVar receivedMessage = JSON.parse(str);
 
-    String macAddress = (const char*)newInfo["macAddress"];
-    String loraAddress = (const char*)newInfo["loraAddress"];
-    double x = (double)newInfo["x"];
-    double y = (double)newInfo["y"];
-    int floor = (int)newInfo["floor"];
+    // Parse message received
+    String macAddress = (const char*)receivedMessage["macAddress"];
+    String loraAddress = (const char*)receivedMessage["loraAddress"];
+    double x = (double)receivedMessage["x"];
+    double y = (double)receivedMessage["y"];
+    int floor = (int)receivedMessage["floor"];
 
     // Clear the internal memory
     u8g2->clearBuffer(); 
@@ -195,10 +207,29 @@ void loop()
     //   // some other error occurred
     //   printToDisplay("[SX1280] Failed!", u8g2);
     // }
+        // Delay before sending the next packet to prevent CRC Error?
+    delay(1000);
+    
     // put module back to listen mode
     radio.startReceive();
-  
+
     // we're ready to receive more packets, enable interrupt service routine
     enableReceiveInterrupt = true;
+
+    // // Check if parsing succeeded
+    // if (JSON.typeof(receivedMessage) == "undefined") {
+    //   Serial.printf("Not a JSON message!\n");
+
+    //   // Clear display
+    //   display.clear();
+
+    //   // Print RX(X)
+    //   display.drawString(0, 12, "Not a JSON message!");
+
+    //   // Display message
+    //   display.display();
+    // }
+    // else {
+    // } 
   }
 }

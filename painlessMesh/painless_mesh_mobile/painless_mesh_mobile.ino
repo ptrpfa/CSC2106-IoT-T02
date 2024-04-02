@@ -89,13 +89,19 @@ void estimateLocation() {
   
   Serial.println("At least three beacons found");
 
+  for (const auto& pair : rssiVector) {
+    Serial.print("BSSID: ");
+    Serial.print(pair.first);
+    Serial.print(", RSSI: ");
+    Serial.println(pair.second);
+  }
+
   // Get nearest 3 mac addresses
   std::sort(rssiVector.begin(), rssiVector.end(), [](const std::pair<String, int>& a, const std::pair<String, int>& b) {
     return a.second > b.second;
   });
   Serial.println("RSSI sorted");
 
-  // JSONVar nearestThree;
   double nearestThree[3];
   std::pair<String, int> nearestThreeArray[3];
 
@@ -118,13 +124,12 @@ void estimateLocation() {
   Serial.println("Calculating distance\n");
   for (int i = 0; i < 3; i++) {
     // Extract the MAC address from the nearestThree JSONVar
-    // String targetMac = nearestThree.keys()[i];
     String targetMac = nearestThreeArray[i].first;
     Serial.printf("Getting distance for");
     Serial.println(targetMac);
     // Convert RSSI to distances
     // Constants
-    double n = 4.0;
+    double n = 5.0;
     double A = -70;
 
     // Calculate
@@ -134,12 +139,30 @@ void estimateLocation() {
     nearestThree[i] = distance;
 
     // Find MAC address in nodeList
+    String targetMacSubstrFirst = targetMac.substring(0,15);
+    String targetMacSubstrSec = targetMac.substring(15,17);
+    Serial.println(targetMacSubstrFirst);
+    Serial.println(targetMacSubstrSec);
+    int hexVal = strtol(targetMacSubstrSec.c_str(), nullptr, 16);
+    if (hexVal > 0) {
+      hexVal -= 1;
+    }
+    else {
+
+    }
+    char hexStr[3];
+    sprintf(hexStr, "%02X",hexVal & 0xFF);
+    targetMacSubstrSec = String(hexStr);
+
+    targetMac = targetMacSubstrFirst + targetMacSubstrSec;
+
     for (auto& node : nodeList) {
-      String nodeMacAddressSubstr = node.macAddress.substring(0,14);
-      String targetMacSubstr = targetMac.substring(0,14);
-      Serial.println(nodeMacAddressSubstr);
-      Serial.println(targetMacSubstr);
-      if (strcmp(nodeMacAddressSubstr.c_str(), targetMacSubstr.c_str()) == 0) {
+      Serial.println(targetMac);
+
+      // String nodeMacAddressSubstr = node.macAddress.substring(0,14);
+      // Serial.println(nodeMacAddressSubstr);
+      // Serial.println(targetMacSubstr);
+      if (strcmp(node.macAddress.c_str(), targetMac.c_str()) == 0) {
         // Add the node's coordinates to topThreeCoordinates
         Serial.println("Found");
         topThreeCoordinates.push_back(Point(node.x, node.y));
@@ -163,6 +186,13 @@ void estimateLocation() {
   double y = estimated_point.getY();  // To get estimated y coordinate
   Serial.printf("Got estimated x and y: %lf, %lf\n", x, y);
 
+  M5.Lcd.setCursor(0, 40, 2);
+  M5.Lcd.print("X Coordinate: ");
+  M5.Lcd.print(x);
+  
+  M5.Lcd.setCursor(0, 60, 2);
+  M5.Lcd.print("y Coordinate: ");
+  M5.Lcd.print(y);
   // Send to main node
   JSONVar data;
   Serial.printf("Sending to main node\n");
@@ -219,7 +249,7 @@ void sendMainNode() {
 // Needed for painless library
 void receivedCallback(uint32_t from, String& msg) {
 
-  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  // Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
 
   if (!mainNodeSet) {
     if (msg.startsWith(MAINNODE)) {
@@ -234,14 +264,14 @@ void receivedCallback(uint32_t from, String& msg) {
 
   // Check if parsing succeeded
   if (JSON.typeof(newInfo) == "undefined") {
-    Serial.println("Not a JSON");
+    // Serial.println("Not a JSON");
     return;
   }
 
-  Serial.println(newInfo["type"]);
+  // Serial.println(newInfo["type"]);
   
   if (strcmp((const char*)newInfo["type"], "BEACON") == 0) {
-    Serial.println("Received new beacon\n");
+    // Serial.println("Received new beacon\n");
     String macAddress = (const char*)newInfo["macAddress"];
     int index = findNodeByMAC(macAddress);
 

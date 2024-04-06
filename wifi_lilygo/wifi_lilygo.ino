@@ -14,18 +14,8 @@ const char* ssid        = "peteophelia"; // your hotspot name
 const char* password    = "aakf6248"; // your hotspot password
 const String server = "http://34.126.129.174:80/lilygo-data"; // your computer ip address, ensure both are connected to hotspot
 
-String ipaddr = "";
-
-// elderly m5
-String macAddress = "";
-String elderly = "";
-String geofenced_area = "";
-
-// location
-String loraAddress = "";
-double x = 0.0;
-double y = 0.0;
-int levelfloor = 0;
+// XOR encryption key
+const uint8_t xorKey = 0b101010;
 
 // flag to indicate that a packet was received
 volatile bool receivedFlag = true;
@@ -130,118 +120,88 @@ void setup() {
   }
 
   // Connected to WiFi
-  ipaddr = WiFi.localIP().toString();
-  display.clear();
-  display.drawString(0, 0,"wifi connected");
-  display.drawString(0, 10, "IP address:");
-  display.drawString(60, 10, ipaddr);
-  display.display();
+  // ipaddr = WiFi.localIP().toString();
+  // display.clear();
+  // display.drawString(0, 0,"wifi connected");
+  // display.drawString(0, 10, "IP address:");
+  // display.drawString(60, 10, ipaddr);
+  // display.display();
   
 }
 
-void loop() {
+String xor_decrypt(String encrypted_message, uint8_t key) {
+  String decrypted_message = "";
+  for (int i = 0; i < encrypted_message.length(); i++) {
+    decrypted_message += char(encrypted_message[i] ^ key);
+  }
+  return decrypted_message;
+}
 
-  // put your main code here, to run repeatedly:
+void loop() {
   if(WiFi.status() == WL_CONNECTED){
   // GET data from other lilygo
-
     if (receivedFlag) {
       // disable the interrupt service routine while processing the data
       enableReceiveInterrupt = false;
 
       // reset flag
       receivedFlag = false;
-
+      
       // you can read received data as an Arduino String
       String str;
       // Receive
       int state = radio.readData(str);
-      JSONVar newInfo = JSON.parse(str);
 
-      macAddress = (const char*)newInfo["macAddress"];
-      loraAddress = (const char*)newInfo["loraAddress"];
-      x = (double)newInfo["x"];
-      y = (double)newInfo["y"];
-      
-      levelfloor = (int)newInfo["floor"];
+      // to check for encrypt data in string
+      // display.clear();
+      // display.drawString(0, 0,"encrypted data");
+      // display.drawString(0, 10, str);
+      // display.display();
+      // delay(3000);
 
-      // Clear the internal memory
-      u8g2->clearBuffer(); 
+      str = xor_decrypt(str, xorKey); 
 
-      // Print macAddress
-      u8g2->setCursor(0, 12); // Set cursor position
-      u8g2->println(macAddress);
+      // to check for decrypted data in string
+      // display.clear();
+      // display.drawString(0, 0,"decrypted data");
+      // display.drawString(0, 10, str);
+      // display.display();
+      // delay(3000);
 
-      // Print loraAddress
-      u8g2->setCursor(0, 26); // Set cursor position
-      u8g2->println(loraAddress);
-
-      // Print x
-      u8g2->setCursor(0, 40); // Set cursor position for the next line
-      u8g2->print("X: ");
-      u8g2->print(x);
-
-      // Print y
-      u8g2->setCursor(0, 54); // Set cursor position for the next line
-      u8g2->print("Y: ");
-      u8g2->print(y);
-
-      // Print floor
-      u8g2->setCursor(0, 68); // Set cursor position for the next line
-      u8g2->print("Floor: ");
-      u8g2->print(levelfloor);
-      u8g2->sendBuffer(); // Transfer internal memory to the display
-      
       radio.startReceive();
     
       // we're ready to receive more packets, enable interrupt service routine
       enableReceiveInterrupt = true;
+
+      HTTPClient http;
+
+      //set endpoint and content type
+      http.begin(server);
+      http.addHeader("Content-Type", "application/json");
+
+      // Create JSON data and POST
+      int httpCode = http.POST(str);
+      
+      // // check if there is error doing POST request from device
+      if (httpCode>0) {
+        // Response from server after successful POST
+        // String payload = http.getString();
+        display.clear();
+        display.drawString(0, 0,"sending POST request:");
+        // display.drawString(0, 10, payload);
+        display.drawString(0, 20, str);
+        display.display();
+      }
+      else {
+        display.clear();
+        display.drawString(0, 0,"Error when sending");
+        display.display();
+      }
+
+      http.end();
     }
 
-    HTTPClient http;
-
-    //set endpoint and content type
-    http.begin(server);
-    http.addHeader("Content-Type", "application/json");
-
-    // Create JSON object and add data
-    StaticJsonDocument<200> jsonDoc;
-    
-    // elderly
-    jsonDoc["m5_hardware_id"] = macAddress;
-    jsonDoc["elderly"] = elderly;
-    jsonDoc["geofenced_area"] = geofenced_area;
-
-    // location
-    jsonDoc["x"] = x;
-    jsonDoc["y"] = y;
-    jsonDoc["floor"] = levelfloor;
-
-    // Serialize JSON object to string
-    String jsonString;
-    serializeJson(jsonDoc, jsonString);
-
-    // Create JSON data and POST
-    int httpCode = http.POST(jsonString);
-    
-    // check if there is error doing POST request from device
-    if (httpCode>0) {
-      // Response from server after successful POST
-      String payload = http.getString();
-      display.clear();
-      display.drawString(0, 0,"sending POST request");
-      display.drawString(0, 10, payload);
-      display.display();
-    }
-    else {
-      display.clear();
-      display.drawString(0, 0,"Error when sending");
-      display.display();
-    }
-
-    http.end();
-
-    delay(10000);
+    delay(5000);
   }
 
 }

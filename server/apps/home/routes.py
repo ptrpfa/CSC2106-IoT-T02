@@ -18,15 +18,15 @@ uri = "mongodb+srv://csc2106:ppijBFqcBxQgFfAk@csc2106.tjdvgts.mongodb.net/?retry
 client = MongoClient(uri)
 mongoDatabase = client["csc2106"]
 areaCoordinatesCollection = "area-coordinates"
+elderlyM5Collection = "elderly-m5"
 locationCollection = "location"
 
-m5_hardware_id = ""
+m5_node_id = ""
 elderly = ""
 geofenced_area = ""
 x = ""
 y = ""
 floor = ""
-timestamp = ""
 
 @blueprint.route('/index')
 def index():
@@ -35,7 +35,7 @@ def index():
 @blueprint.route("/elderly-real-time-data")
 def realTimeData():
 
-    documents = mongoDatabase[locationCollection].find()
+    documents = mongoDatabase[elderlyM5Collection].find()
     document = [doc for doc in documents]
 
     return  render_template("elderlyRealTimeData.html", documents=document, segment='index')
@@ -44,27 +44,38 @@ def realTimeData():
 def form():
     return  render_template("developerForm.html", segment='index')
 
+@blueprint.route("/developer-form/submit", methods=['POST'])
+def form_submit():
+    global m5_node_id, elderly, geofenced_area
+    data = request.get_json()
+    elderly_name = data.get('elderlyName')
+    m5_node_id = data.get('m5_node_id')
+    geofence = data.get('geofence')
+    elderly_m5_data = {
+        'm5_node_id': int(m5_node_id),
+        'elderly': elderly_name,
+        'geofenced_area': geofence
+    }
+    mongoDatabase[elderlyM5Collection].insert_one(elderly_m5_data)
+    return  render_template("developerForm.html", segment='index')
+
 @blueprint.route("/lilygo-data", methods=['POST', 'GET'])
 def lilygoData():
-    global m5_hardware_id, elderly, geofenced_area, x , y, floor, timestamp
+    global m5_node_id, x , y, floor
     if request.method == 'POST':
         lilygoData = request.json
         print(lilygoData)
         if lilygoData:
-            m5_hardware_id = lilygoData.get('macAddress')
-            elderly = lilygoData.get('elderly')
-            geofenced_area = lilygoData.get('geofenced_area')
+            m5_node_id = lilygoData.get('nodeID')
             x = lilygoData.get('x')
             y = lilygoData.get('y')
-            floor = lilygoData.get('floor')
+            floor = "6"
 
-            if (x != None and y != None and m5_hardware_id != None):
+            if (x != None and y != None and m5_node_id != None):
                 if (x > 0 and y > 0):
-                    # Create JSON objects for each collection
+                    # Create JSON objects for each collection                    
                     location_data = {
-                        'm5_hardware_id': m5_hardware_id,
-                        'elderly': elderly,
-                        'geofenced_area': geofenced_area,
+                        'm5_node_id': m5_node_id,
                         'x': x,
                         'y': y,
                         'floor': floor,
@@ -92,7 +103,7 @@ def lilygoData():
         else:
             return "No JSON data received", 400 # return to lilygo
     
-    return  render_template("lilygoData.html", m5_hardware_id=m5_hardware_id, elderly=elderly, geofenced_area=geofenced_area, x=x, y=y, floor=floor, timestamp=timestamp, segment='index')
+    return  render_template("lilygoData.html", m5_hardware_id=m5_node_id, elderly=elderly, geofenced_area=geofenced_area, x=x, y=y, floor=floor, segment='index')
 
 @blueprint.route("/map")
 def map():
@@ -100,6 +111,7 @@ def map():
 
 @blueprint.route("/map-data")
 def sample_map_data():
+    global floor
 
     aggregated_data = {}
     map_documents = mongoDatabase[locationCollection].find().sort("_id", -1)
@@ -107,12 +119,19 @@ def sample_map_data():
     for document in map_documents:
         x = document["x"]
         y = document["y"]
-        label = document["elderly"]
-        floor = document["floor"]
+        m5_node_id = document["m5_node_id"]
+        
+        elderly_document = mongoDatabase[elderlyM5Collection].find_one({"m5_node_id": m5_node_id})
+        
+        if elderly_document:
+            elderly = elderly_document.get("elderly")
+        else:
+            elderly = None
 
-        if label not in aggregated_data:
-            aggregated_data[label] = []
-            aggregated_data[label].append({'x': int(x), 'y': int(y), 'label': label, 'floor': floor})
+        if elderly:
+            if elderly not in aggregated_data:
+                aggregated_data[elderly] = []
+                aggregated_data[elderly].append({'x': int(x), 'y': int(y), 'label': elderly, 'floor': floor})
     
     return jsonify(aggregated_data)
 

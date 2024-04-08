@@ -16,7 +16,7 @@
 #define   NODE            "A"
 
 /* LoRa Configurations */
-#define   FLOOR_NO        "1"
+#define   FLOOR_NO        "6"
 // #define   LORA_CF         "carrierfreq"
 // #define   LORA_BW         "bandwidth"
 // #define   LORA_SF         "spreadingfactor"
@@ -72,28 +72,15 @@ void pmReceiveCallback( uint32_t from, String &msg ) {
   // reset flag
   transmittedFlag = false;
 
-  // Hardcoded LoRa transmission for testing (COMMENT OUT FOR TESTING ONLY)
-  StaticJsonDocument<200> data;
-  data["x"] = 10.000;
-  data["y"] = 12.00;
-  data["macAddress"] = WiFi.macAddress().c_str();
-  data["floor"] = FLOOR_NO;
-  data["elderly"] = "ABANGBONGBA";
-  data["geofenced_area"] = "Flat A";
-  data["type"] = "LOCATION";
-  // Serialize JSON object to string
-  String message;
-  serializeJson(data, message);
-
   // start transmitting the packet
-  int transmissionState = radio.startTransmit(message);
+  int transmissionState = radio.startTransmit(msg);
 
   // Display transmitted lora message
   if (transmissionState == RADIOLIB_ERR_NONE) {
     display.clear();
     display.drawString(0, 0, "Transmitted LoRa Message!");
     display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.drawStringMaxWidth(0, 10, 128, message);
+    display.drawStringMaxWidth(0, 10, 128, msg);
     display.display();
   } 
   else {
@@ -102,9 +89,23 @@ void pmReceiveCallback( uint32_t from, String &msg ) {
     display.drawString(0, 10,"LoRa failed transmit!");
     display.display();
   }
-  message.clear();
+  msg.clear();
 
-  // Check if parsing succeeded (UNCOMMENT FOR ACTUAL INTEGRATION)
+  // // Hardcoded LoRa transmission for testing (COMMENT OUT FOR TESTING ONLY)
+  // StaticJsonDocument<200> data;
+  // data["x"] = 10.000;
+  // data["y"] = 12.00;
+  // data["macAddress"] = WiFi.macAddress().c_str();
+  // data["floor"] = FLOOR_NO;
+  // data["elderly"] = "ABANGBONGBA";
+  // data["geofenced_area"] = "Flat A";
+  // data["type"] = "LOCATION";
+  
+  // // Serialize JSON object to string
+  // String message;
+  // serializeJson(data, message);
+
+  // Check if parsing succeeded (Checks for previously unencrypted messages)
   // if (JSON.typeof(JSON.parse(msg)) == "undefined") {
   //   display.clear();
   //   display.drawString(0, 0, "Received PM Message!");

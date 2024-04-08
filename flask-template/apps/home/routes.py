@@ -10,6 +10,7 @@ from jinja2 import TemplateNotFound
 from pymongo import MongoClient
 import json
 from twilio.rest import Client
+import os
 
 uri = "mongodb+srv://csc2106:ppijBFqcBxQgFfAk@csc2106.tjdvgts.mongodb.net/?retryWrites=true&w=majority&appName=csc2106"
 
@@ -17,7 +18,6 @@ uri = "mongodb+srv://csc2106:ppijBFqcBxQgFfAk@csc2106.tjdvgts.mongodb.net/?retry
 client = MongoClient(uri)
 mongoDatabase = client["csc2106"]
 areaCoordinatesCollection = "area-coordinates"
-elderlyM5Collection = "elderly-m5"
 locationCollection = "location"
 
 m5_hardware_id = ""
@@ -35,7 +35,7 @@ def index():
 @blueprint.route("/elderly-real-time-data")
 def realTimeData():
 
-    documents = mongoDatabase[elderlyM5Collection].find()
+    documents = mongoDatabase[locationCollection].find()
     document = [doc for doc in documents]
 
     return  render_template("elderlyRealTimeData.html", documents=document, segment='index')
@@ -45,8 +45,9 @@ def lilygoData():
     global m5_hardware_id, elderly, geofenced_area, x , y, floor, timestamp
     if request.method == 'POST':
         lilygoData = request.json
+        print(lilygoData)
         if lilygoData:
-            m5_hardware_id = lilygoData.get('m5_hardware_id')
+            m5_hardware_id = lilygoData.get('macAddress')
             elderly = lilygoData.get('elderly')
             geofenced_area = lilygoData.get('geofenced_area')
             x = lilygoData.get('x')
@@ -56,22 +57,32 @@ def lilygoData():
             if (x != None and y != None and m5_hardware_id != None):
                 if (x > 0 and y > 0):
                     # Create JSON objects for each collection
-                    elderly_m5_data = {
+                    location_data = {
                         'm5_hardware_id': m5_hardware_id,
                         'elderly': elderly,
                         'geofenced_area': geofenced_area,
-                    }
-
-                    location_data = {
-                        'm5_hardware_id': m5_hardware_id,
                         'x': x,
                         'y': y,
                         'floor': floor,
                     }
             
                     # save to mongodb (on every POST request it will save to db, need to optimise)
-                    mongoDatabase[elderlyM5Collection].insert_one(elderly_m5_data)
+                    # mongoDatabase[elderlyM5Collection].insert_one(elderly_m5_data)
                     mongoDatabase[locationCollection].insert_one(location_data)
+
+                    # Check whether elderly is in geofenced location
+                    if geofenced_area == 'Flat A':
+                        if not (x < 10 and y > 10):
+                            send_message("+6586686767")
+
+                    elif geofenced_area == 'Flat B':
+                        if not (x > 10 and x < 20 and y > 10):
+                            send_message("+6586686767")
+
+                    elif geofenced_area == 'Flat C':
+                        if not (x > 20 and x < 30 and y > 10):
+                            send_message("+6586686767")
+
 
             return "data received at server", 200 # return to lilygo
         else:
@@ -92,7 +103,7 @@ def sample_map_data():
     for document in map_documents:
         x = document["x"]
         y = document["y"]
-        label = document["m5_hardware_id"]
+        label = document["elderly"]
         floor = document["floor"]
 
         if label not in aggregated_data:
@@ -101,16 +112,15 @@ def sample_map_data():
     
     return jsonify(aggregated_data)
 
-@blueprint.route('/send_message')
-def send_message():
-    account_sid = 'AC2ff910daad2f4262a2707322a0603c61'
-    auth_token = 'c931e1d104b2fa9f38045b2b16432b8f'
+def send_message(number):
+    account_sid = 'AC524e033062d7d1f4a65f7f161ddf63e5'
+    auth_token = os.getenv('AUTH_TOKEN')
     client = Client(account_sid, auth_token)
 
     message = client.messages.create(
-        body="test message",
-        from_="+15642342977",
-        to="+6586686767"
+        body="Your elderly has left their area! Please find them immediately.",
+        from_="+12057828196",
+        to=number
     )
 
     print(message.sid)

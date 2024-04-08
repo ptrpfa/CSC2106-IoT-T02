@@ -65,5 +65,27 @@
 {% endblock content %}
 
 {% block javascripts %}
+<script>
+    $(document).ready(function() {
+        const $submitButton = $('.form-button');
+        const $inputs = $('#developerForm input[type="text"], #developerForm select');
 
+        function checkInputs() {
+            let allFilled = true;
+            $inputs.each(function() {
+                if ($(this).val() === '') {
+                    allFilled = false;
+                    return false;
+                }
+            });
+            $submitButton.prop('disabled', !allFilled);
+        }
+
+        checkInputs();
+
+        $inputs.on('keyup change', function() {
+            checkInputs();
+        });
+    });
+</script>
 {% endblock javascripts %}

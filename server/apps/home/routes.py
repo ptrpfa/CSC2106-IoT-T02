@@ -36,9 +36,12 @@ def index():
 def realTimeData():
 
     documents = mongoDatabase[elderlyM5Collection].find()
+    location_documents = mongoDatabase[locationCollection].find()
+    
     document = [doc for doc in documents]
+    location_document = [location for location in location_documents]
 
-    return  render_template("elderlyRealTimeData.html", documents=document, segment='index')
+    return  render_template("elderlyRealTimeData.html", documents=document,location_documents=location_document, segment='index')
 
 @blueprint.route("/developer-form")
 def form():
@@ -88,15 +91,18 @@ def lilygoData():
                     # Check whether elderly is in geofenced location
                     if geofenced_area == 'Flat A':
                         if not (x < 10 and y > 10):
-                            send_message("+6586686767")
+                            #send_message("+6586686767")
+                            return
 
                     elif geofenced_area == 'Flat B':
                         if not (x > 10 and x < 20 and y > 10):
-                            send_message("+6586686767")
+                            #send_message("+6586686767")
+                            return
 
                     elif geofenced_area == 'Flat C':
                         if not (x > 20 and x < 30 and y > 10):
-                            send_message("+6586686767")
+                            #send_message("+6586686767")
+                            return
 
 
             return "data received at server", 200 # return to lilygo

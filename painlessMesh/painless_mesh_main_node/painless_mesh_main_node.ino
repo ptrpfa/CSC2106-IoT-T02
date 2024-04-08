@@ -2,8 +2,8 @@
 #include <M5StickCPlus.h>
 #include <Arduino_JSON.h>
 
-#define   MESH_PREFIX     "myMesh"
-#define   MESH_PASSWORD   "password"
+#define   MESH_PREFIX     "etms-floor-6"
+#define   MESH_PASSWORD   "t02_iotPassword"
 #define   MESH_PORT       5555
 #define   MAINNODE        "A"
 #define   NODE            "A"

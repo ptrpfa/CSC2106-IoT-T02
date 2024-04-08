@@ -8,12 +8,11 @@
 #include <Preferences.h>
 #include <HTTPClient.h>
 
-#define MESH_PREFIX "myMesh"
-#define MESH_PASSWORD "password"
-#define MESH_PORT 5555
-#define MAINNODE "A"
-#define NODE "B"
-#define TYPE "BEACON"
+#define MESH_PREFIX   "etms-floor-6"
+#define MESH_PASSWORD "t02_iotPassword"
+#define MESH_PORT     5555
+#define MAINNODE      "A"
+#define TYPE          "BEACON"
 
 Scheduler userScheduler;
 Preferences preferences;
@@ -74,7 +73,10 @@ void receivedCallback(uint32_t from, String &msg) {
     if (msg.startsWith(MAINNODE)) {
       mainNode = from;
       Serial.printf("Main node identified: %u\n", mainNode);
-      M5.Lcd.printf("Main node identified: %u\n", mainNode);
+      M5.Lcd.setCursor(20, 85, 2);
+      M5.Lcd.printf("Main node identified");
+      M5.Lcd.setCursor(20, 105, 2);
+      M5.Lcd.printf("(%u)", mainNode);
       mainNodeSet = true;
     }
   }
@@ -127,10 +129,8 @@ void initMesh() {
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
-  Serial.println("Starting node");
+  Serial.println("Starting node ");
   Serial.println(mesh.getNodeId());
-
-  M5.Lcd.printf("STARTING NODE %s\n", NODE);
 }
 
 void initNodeObject() {
@@ -153,41 +153,29 @@ void setup() {
   Serial.begin(115200);
   M5.begin();
   int x = M5.IMU.Init();
-  // Anchor 1
-  // double x_coords = 2.0;
-  // double y_coords = 5.0;
 
-  // Anchor 2
-  // double x_coords = 5.0;
-  // double y_coords = 3.0;
-
-  // // Anchor 3
-  // double x_coords = 3.0;
-  // double y_coords = 1.0;
-
-  // // Anchor 4
-  double x_coords = 18.0;
-  double y_coords = 13.0;
-
-  // Anchor 5
-  // double x_coords = 7.0;
-  // double y_coords = 5.0;
+  // Anchor coordinates
+  double x_coords = 26.0;
+  double y_coords = 1.0;
 
   storeCoordinates(x_coords, y_coords);
 
   if (x != 0)
     Serial.printf("IMU initialisation fail!");
 
-  M5.Lcd.setTextSize(1);
+  M5.Lcd.setTextSize(2);
   M5.Lcd.setRotation(3);
   M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setCursor(0, 0, 2);
-  M5.Lcd.printf("Coordinates set: %lf, %lf", x_coords, y_coords);
+  M5.Lcd.setCursor(20, 10, 2);
+  M5.Lcd.printf("ETMS Anchor");
 
   initMesh();
   delay(1500);
   initNodeObject();
-  M5.Lcd.setCursor(0, 20, 2);
+  M5.Lcd.drawLine(20, 50, 220, 50, TFT_WHITE); 
+  M5.Lcd.setCursor(20, 65, 2);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.printf("Coordinates set (%.2f, %.2f)", x_coords, y_coords);
   delay(1500);
   userScheduler.addTask(taskSendMessage);
   taskSendMessage.enable();
@@ -196,9 +184,4 @@ void setup() {
 void loop() {
   // It will run the user scheduler as well
   mesh.update();
-}
-
-void clearDisplay() {
-  M5.Lcd.fillRect(0, 20, M5.Lcd.width(), M5.Lcd.height() - 20, BLACK);
-  M5.Lcd.setCursor(0, 20, 2);
 }

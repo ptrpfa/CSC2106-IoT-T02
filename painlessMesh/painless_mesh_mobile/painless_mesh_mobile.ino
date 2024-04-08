@@ -6,11 +6,11 @@
 #include <HTTPClient.h>
 #include <vector>
 
-#define MESH_PREFIX "myMesh"
-#define MESH_PASSWORD "password"
-#define MESH_PORT 5555
-#define MAINNODE "A"
-#define NODE "B"
+#define MESH_PREFIX   "etms-floor-6"
+#define MESH_PASSWORD "t02_iotPassword"
+#define MESH_PORT     5555
+#define MAINNODE      "A"
+#define NODE          "B"
 
 Scheduler userScheduler;
 painlessMesh mesh;
@@ -57,6 +57,16 @@ int findNodeByMAC(const String& macAddress) {
 }
 
 void estimateLocation() {
+  // Ensure main node is set first
+  if (!mainNodeSet) {
+    return;
+  }
+  
+  clearDisplay();
+  M5.Lcd.setCursor(20, 65, 2);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.printf("Estimating Location");
+
   // Find MAC address in nodeList
   Serial.printf("ALL NODES IN NODELIST\n");
   int nodeListCount = 0;
@@ -67,6 +77,8 @@ void estimateLocation() {
   }
   if (nodeListCount < 3) {
     Serial.println("Not enough information!\n");
+    M5.Lcd.setCursor(20, 85, 2);
+    M5.Lcd.print("Not Enough Information!");
     return;
   }
 
@@ -78,12 +90,14 @@ void estimateLocation() {
   Serial.println("Scan done");
   if (n == 0) {
     Serial.println("No networks found");
+    M5.Lcd.setCursor(20, 85, 2);
+    M5.Lcd.print("Not Enough Information!");
     return;
   } else {
     for (int i = 0; i < n; ++i) {
       // Store BSSID and RSSI for each network found
       String msg;
-      if (WiFi.SSID(i) == "myMesh") {
+      if (WiFi.SSID(i) == "etms-floor-6") {
         Serial.println("WiFi BSSID: " + WiFi.BSSIDstr(i) + "\n");
         rssiVector.push_back(std::make_pair(WiFi.BSSIDstr(i), WiFi.RSSI(i)));
       } 
@@ -94,6 +108,8 @@ void estimateLocation() {
 
   if (rssiVector.size() < 3) {
     Serial.println("Insufficient beacons found");
+    M5.Lcd.setCursor(20, 85, 2);
+    M5.Lcd.print("Not Enough Information!");
     return;
   }
   
@@ -154,6 +170,8 @@ void estimateLocation() {
   // Ensure we have at least three data
   if (count < 3) {
     Serial.println("Not enough data!");
+    M5.Lcd.setCursor(20, 85, 2);
+    M5.Lcd.print("Not Enough Information!");
     return;
   }
 
@@ -222,12 +240,12 @@ void estimateLocation() {
   double y = estimated_point.getY();  // To get estimated y coordinate
   Serial.printf("Got estimated x and y: %lf, %lf\n", x, y);
 
-  M5.Lcd.setCursor(0, 40, 2);
+  M5.Lcd.setCursor(20, 85, 2);
   M5.Lcd.print("X Coordinate: ");
   M5.Lcd.print(x);
   
-  M5.Lcd.setCursor(0, 60, 2);
-  M5.Lcd.print("y Coordinate: ");
+  M5.Lcd.setCursor(20, 105, 2);
+  M5.Lcd.print("Y Coordinate: ");
   M5.Lcd.print(y);
   // Send to main node
   Serial.printf("Sending to main node\n");
@@ -258,7 +276,10 @@ void receivedCallback(uint32_t from, String& msg) {
     if (msg.startsWith(MAINNODE)) {
       mainNode = from;
       Serial.printf("Main node identified: %u\n", mainNode);
-      M5.Lcd.printf("Main node identified: %u\n", mainNode);
+      clearDisplay();
+      M5.Lcd.setCursor(20, 65, 2);
+      M5.Lcd.setTextSize(1);
+      M5.Lcd.printf("Main Node Identified!");
       mainNodeSet = true;
       return;
     }
@@ -314,21 +335,21 @@ void nodeTimeAdjustedCallback(int32_t offset) {
 
 void initMesh() {
   mesh.setDebugMsgTypes(ERROR | STARTUP);  // set before init() so that you can see startup messages
-
+  clearDisplay();
+  
   mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT);
   mesh.onReceive(&receivedCallback);
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
-  Serial.println("Starting node");
+  Serial.println("Starting node ");
   Serial.println(mesh.getNodeId());
 
-  M5.Lcd.setRotation(3);
-  M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setCursor(0, 0, 2);
-  M5.Lcd.printf("STARTING NODE %s\n", NODE);
-
+  M5.Lcd.setCursor(20, 65, 2);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.printf("Starting Tag Node");
+  
   userScheduler.addTask(taskEstimateLocation);
   taskEstimateLocation.enable();
 }
@@ -341,7 +362,6 @@ void setup() {
   if (x != 0)
     Serial.printf("IMU initialisation fail!");
 
-  M5.Lcd.setTextSize(1);
   delay(2000);
   initMesh();
 }
@@ -366,11 +386,16 @@ void loop() {
     mesh.sendSingle(mainNode, message);
     while(digitalRead(BUTTON_A_PIN) == LOW); // Wait for button release to avoid multiple writes
   }
-
 }
 
 void clearDisplay() {
 
   M5.Lcd.fillRect(0, 20, M5.Lcd.width(), M5.Lcd.height() - 20, BLACK);
-  M5.Lcd.setCursor(0, 20, 2);
+  
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.setRotation(3);
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setCursor(20, 10, 2);
+  M5.Lcd.printf("ETMS Tag");
+  M5.Lcd.drawLine(20, 50, 220, 50, TFT_WHITE); 
 }

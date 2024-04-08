@@ -1,8 +1,9 @@
 ## Table of Contents
 1. [Team](#csc2106-iot-elderly-tracking-system)
-2. [System Overview](#system-overview-elderly-tracking-and-monitoring-system)
-3. [Requirements](#requirements)
-4. [Getting Started](#getting-started)
+2. [Overview](#overview-elderly-tracking-and-monitoring-system)
+3. [System Design](#system-design)
+4. [Requirements](#requirements)
+5. [Getting Started](#getting-started)
 
 ## CSC2106 IoT Team 2
 - Peter Febrianto Afandy (*2200959*)
@@ -11,10 +12,8 @@
 - Joshua Lim (*2200687*)
 - Colin Ng Kar Jun (*2200920*)
 
-## System Overview (Elderly Tracking and Monitoring System)
+## Overview (Elderly Tracking and Monitoring System)
 The increasing number of elderly individuals living independently in Singapore or with conditions such as dementia presents a critical challenge for caregivers and society at large. With a significant portion of the elderly population at risk of getting lost or encountering emergencies without immediate assistance, there is an urgent need for innovative solutions to monitor and ensure their safety within their living environments. 
-
-
 
 The absence of effective and precise indoor tracking systems within residential compounds intensifies this issue, as it hinders the ability of caregivers to promptly determine the location and well-being of their elderly dependents and despite the government’s efforts, there remain untapped opportunities for the direct integration of technology into elderly-focused estates.
 
@@ -22,7 +21,7 @@ Building upon these efforts, we propose the development of a **comprehensive eld
 
 ![System Design](docs/system_overview.png)
 
-System Architecture:
+## System Design
 ![System Architecture](docs/arch.png)
 
 Main Features:
@@ -40,9 +39,7 @@ Technologies Used:
 - MongoDB (for storing application data)
 - Flask (server to handle application operations)
 
-![OSI Layers](docs/osi.png)
-
-Components and Technologies:
+Considerations:
 - Range 
     - LoRa (2 – 5km), suitable for inter-floor message passing
     - Wi-Fi (up to 90m), suitable for intra-flat and intra-floor positioning
@@ -67,8 +64,6 @@ Components and Technologies:
 
         **Message passing of LoRa with painlessMesh only requires ONE wireless access point*
 
-
-
 ## Requirements
 - Hardware
     - Lilygo T3-S3 V1.2 (minimum of two, but three is recommended for floor-floor communications)
@@ -81,7 +76,6 @@ Components and Technologies:
     - HTML/CSS/JavaScript (dashboard)
     - Python
     - MongoDB
-
 
 ## Getting Started
 <ins>Pre-Requisites for M5StickCPlus</ins>
@@ -126,3 +120,7 @@ Components and Technologies:
         ```
         python3 server.py
         ```
+
+To view a demo of the application, click [here](https://www.youtube.com/watch?v=MJQ3HeDBlzA) or scan the QR-code below!
+
+![QR Code](docs/qr.png)

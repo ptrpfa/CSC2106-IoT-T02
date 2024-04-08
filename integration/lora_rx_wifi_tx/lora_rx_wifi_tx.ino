@@ -12,8 +12,8 @@
 // Code for: LoRa Receiver + WiFi Transmitter
 
 /* WiFi Configurations */
-#define   SSID            "SSID"
-#define   PASSWORD        "PASSWORD"
+#define   SSID            "peteophelia"
+#define   PASSWORD        "aakf6248"
 #define   SERVER_ENDPOINT "http://34.126.129.174:80/lilygo-data"
 
 /* LoRa Configurations */

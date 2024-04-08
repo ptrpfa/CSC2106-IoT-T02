@@ -5,19 +5,19 @@
 #include <WiFi.h>
 #include "boards.h"
 #include <cmath> 
-#include <SPI.h>
-#include <WiFi.h>
-#include <HTTPClient.h>
+#include <Preferences.h>
 
-// Code for: LoRa Receiver + WiFi Transmitter
+// Code for: LoRa Receiver + painlessMesh Transmitter
 
-/* WiFi Configurations */
-#define   SSID            "SSID"
-#define   PASSWORD        "PASSWORD"
-#define   SERVER_ENDPOINT "http://34.126.129.174:80/lilygo-data"
+/* painlessMesh Configurations */
+#define   MESH_PREFIX     "myMesh" // Different mesh for each level
+#define   MESH_PASSWORD   "password"
+#define   MESH_PORT       5555
+#define   MAINNODE        "A"
+#define   NODE            "A"
 
 /* LoRa Configurations */
-#define   FLOOR_NO        "7"
+#define   FLOOR_NO        "2"
 // #define   LORA_CF         "carrierfreq"
 // #define   LORA_BW         "bandwidth"
 // #define   LORA_SF         "spreadingfactor"
@@ -34,6 +34,43 @@ int16_t SX128x::begin	(	float 	freq = 2400.0,
   uint16_t 	preambleLength = 12 
 )		
 */
+
+/* painlessMesh */
+Scheduler userScheduler;
+Preferences preferences;
+painlessMesh mesh;
+
+bool mainNodeSet = false;
+bool isFirstConnection = true;
+uint32_t mainNode;
+String readings;
+
+void sendMessage();
+void sendMainNode();
+
+Task taskSendMessage(TASK_SECOND * 5, TASK_FOREVER, &sendMessage);
+Task taskSendMainNode(TASK_SECOND * 5, TASK_FOREVER, &sendMainNode);
+
+struct NodeInfo {
+  double x;
+  double y;
+  String macAddress;
+  String type;
+  uint32_t nodeId;
+
+  String toJSONString() {
+    JSONVar node;
+    node["x"] = x;
+    node["y"] = y;
+    node["macAddress"] = macAddress.c_str();
+    node["type"] = type.c_str();
+    node["nodeID"] = (int)nodeId;
+
+    String output = JSON.stringify(node);
+    return output;
+  }
+};
+NodeInfo myInfo;
 
 // Display
 SSD1306Wire display(0x3c, 18, 17);
@@ -59,6 +96,104 @@ void loraReceiveCallback(void) {
   }
 }
 
+void sendMessage() {
+  // String msg = getReadings();
+  mesh.sendBroadcast(myInfo.toJSONString());
+  // taskSendMessage.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
+}
+
+void sendMainNode() {
+  if (mainNodeSet) {
+    // Retrieve self coords
+    preferences.begin("coords", true);
+    double x = preferences.getDouble("x", 0.0);
+    double y = preferences.getDouble("y", 0.0);
+    preferences.end();
+
+    String msg = "Hello Main Node from Beacon (";
+    msg += x;
+    msg += ", ";
+    msg += y;
+    msg += ")";
+    mesh.sendSingle(mainNode, msg);
+  }
+}
+
+// Receveied message callback
+void receivedCallback(uint32_t from, String &msg) {
+
+  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+
+  if (!mainNodeSet) {
+    if (msg.startsWith(MAINNODE)) {
+      mainNode = from;
+      Serial.printf("Main node identified: %u\n", mainNode);
+      M5.Lcd.printf("Main node identified: %u\n", mainNode);
+      mainNodeSet = true;
+    }
+  }
+}
+
+void newConnectionCallback(uint32_t nodeId) {
+  // Send own data to new node
+  mesh.sendSingle(nodeId, myInfo.toJSONString());
+
+  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+}
+
+void changedConnectionCallback() {
+  if (isFirstConnection) {
+    // Initial connection
+    isFirstConnection = false;
+
+    // Broadcast my info
+    mesh.sendBroadcast(myInfo.toJSONString());
+  }
+  Serial.printf("Changed connections\n");
+}
+
+void nodeTimeAdjustedCallback(int32_t offset) {
+  Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
+}
+
+void storeCoordinates(double x, double y) {
+  preferences.begin("coords", false);
+  preferences.putDouble("x", x);
+  preferences.putDouble("y", y);
+  preferences.end();
+}
+
+void initMesh() {
+  mesh.setDebugMsgTypes(ERROR | STARTUP);  // set before init() so that you can see startup messages
+
+  mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT);
+  mesh.onReceive(&receivedCallback);
+  mesh.onNewConnection(&newConnectionCallback);
+  mesh.onChangedConnections(&changedConnectionCallback);
+  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+
+  Serial.println("Starting node");
+  Serial.println(mesh.getNodeId());
+
+  M5.Lcd.printf("STARTING NODE %s\n", NODE);
+}
+
+void initNodeObject() {
+  preferences.begin("coords", true);
+
+  // Load data from preferences into myInfo
+  myInfo.x = preferences.getDouble("x", 0.0);
+  myInfo.y = preferences.getDouble("y", 0.0);
+  preferences.end();  // Close the preferences
+
+  myInfo.macAddress = WiFi.macAddress();
+  myInfo.type = TYPE;
+  myInfo.nodeId = mesh.getNodeId();
+
+  // Use the data for whatever you need, for example, print the JSON string
+  Serial.println(myInfo.toJSONString());
+}
+
 // Program entrypoint
 void setup() {
   // Initialise board
@@ -70,7 +205,7 @@ void setup() {
   // Serial Monitor
   Serial.begin(115200);
   delay(100);
-
+  
   // Initialise display
   display.init();
   display.clear();
@@ -78,6 +213,40 @@ void setup() {
   display.flipScreenVertically();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   delay(3000);
+
+  // Initialise painlessMesh
+  // Anchor 1
+  // double x_coords = 2.0;
+  // double y_coords = 5.0;
+
+  // Anchor 2
+  // double x_coords = 5.0;
+  // double y_coords = 3.0;
+
+  // // Anchor 3
+  // double x_coords = 3.0;
+  // double y_coords = 1.0;
+
+  // // Anchor 4
+  // double x_coords = 7.0;
+  // double y_coords = 1.0;
+
+  // // Anchor 5
+  double x_coords = 7.0;
+  double y_coords = 5.0;
+
+  storeCoordinates(x_coords, y_coords);
+  if (x != 0)
+    Serial.printf("IMU initialisation fail!");
+
+  initMesh();
+  delay(1500);
+  initNodeObject();
+  delay(1500);
+  userScheduler.addTask(taskSendMainNode);
+  userScheduler.addTask(taskSendMessage);
+  taskSendMessage.enable();
+  taskSendMainNode.enable();
 
   // Initialise LoRa
   int state = radio.begin();
@@ -133,22 +302,12 @@ void setup() {
   // Set LoRa callback function when a packet is received
   radio.setDio1Action(loraReceiveCallback);
 
-  // Connect to WiFi
-  WiFi.begin(SSID, PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    display.clear();
-    display.drawString(0, 0, "Connecting to Wifi..");
-    display.display();
-  }
-
   // Display
   display.clear();
   display.drawString(0, 0, "LoRa (Receiver)");
-  display.drawString(0, 10, "WiFi (Transmitter)");
+  display.drawString(0, 10, "PM (Transmitter)");
   String sFloor = String(FLOOR_NO);
   display.drawString(0, 20, "Floor: " + sFloor);
-  display.drawString(0, 30, "IP: " +  WiFi.localIP().toString());
   display.display();
   sFloor.clear();
 
@@ -169,6 +328,9 @@ void setup() {
 
 void loop()
 {   
+  // It will run the user scheduler as well
+  mesh.update();
+  
   // check if the flag is set
   if(receivedFlag) {
     // disable the interrupt service routine while processing the data
@@ -183,9 +345,6 @@ void loop()
     // Parse received message
     int state = radio.readData(messageReceived);
     
-    // Decrypt message
-    messageReceived = xor_decrypt(messageReceived, xorKey); 
-
     // Parse message received
     // JSONVar loraMessage = JSON.parse(messageReceived);
     // Convert String to char*
@@ -196,15 +355,15 @@ void loop()
     StaticJsonDocument<200> loraMessage;
     deserializeJson(loraMessage, messageBuffer);
 
-    // Display message received
-    display.clear();
-    display.drawString(0, 0, "Received LoRa Message!");
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.drawStringMaxWidth(0, 10, 128, messageReceived);
-    display.display();
+    // TEMPORARY
+    // display.clear();
+    // display.drawString(0, 0, "Received LoRa Message!");
+    // display.setTextAlignment(TEXT_ALIGN_LEFT);
+    // display.drawStringMaxWidth(0, 10, 128, messageReceived);
+    // display.display();
 
     // Parse message received
-    // int floor = String((const char*)loraMessage["floor"]).toInt();
+    int floor = String((const char*)loraMessage["floor"]).toInt();
     double x = (double)loraMessage["x"];
     double y = (double)loraMessage["y"];
       
@@ -238,7 +397,6 @@ void loop()
         display.drawString(0, 0,"sending POST request");
         display.drawString(0, 10, payload);
         display.display();
-        payload.clear();
       }
       else {
         display.clear();
@@ -252,12 +410,9 @@ void loop()
     else {
       display.clear();
       display.drawString(0, 0, "Received Lora Message!");
-      display.drawString(0, 10,"Invalid data or received!");
+      display.drawString(0, 10,"Invalid data or floor received!");
       display.display();
     }
-
-    // Release string
-    messageReceived.clear();
 
     // we're ready to receive more packets, enable interrupt service routine
     enableReceiveInterrupt = true;
@@ -265,4 +420,12 @@ void loop()
     // put module back to listen mode
     radio.startReceive(); 
   } 
+}
+
+String getReadings() {
+  JSONVar jsonReadings;
+  jsonReadings["node"] = NODE;
+  jsonReadings["temp"] = M5.Axp.GetTempData() * 0.1 - 144.7;
+  readings = JSON.stringify(jsonReadings);
+  return readings;
 }

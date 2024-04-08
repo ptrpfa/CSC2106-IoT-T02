@@ -37,9 +37,6 @@ SPIClass SDSPI(HSPI);
 
 Ticker ledTicker;
 
-// Encryption key
-const uint8_t xorKey = 0b101010;
-
 #define initPMU()
 #define disablePeripherals()
 
@@ -70,13 +67,4 @@ initPMU();
         level = !level;
     });
 #endif
-}
-
-// Function to decrypt message
-String xor_decrypt(String encrypted_message, uint8_t key) {
-  String decrypted_message = "";
-  for (int i = 0; i < encrypted_message.length(); i++) {
-    decrypted_message += char(encrypted_message[i] ^ key);
-  }
-  return decrypted_message;
 }

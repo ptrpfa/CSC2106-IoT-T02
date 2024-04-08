@@ -36,6 +36,18 @@ Task taskSendMessage(TASK_SECOND * 1, TASK_FOREVER, &sendMessage);
 // Task taskSendMainNode(TASK_SECOND * 1, TASK_FOREVER, &sendMainNode);
 Task taskEstimateLocation(TASK_SECOND * 10, TASK_FOREVER, &estimateLocation);
 
+// XOR encryption key
+const uint8_t xorKey = 0b101010;
+
+// Function to encrypt the message using XOR
+String xor_encrypt(String message, uint8_t key) {
+  String encrypted_message = "";
+  for (int i = 0; i < message.length(); i++) {
+    encrypted_message += char(message[i] ^ key);
+  }
+  return encrypted_message;
+}
+
 
 int findNodeByMAC(const String& macAddress) {
   for (size_t i = 0; i < nodeList.size(); i++) {
@@ -201,9 +213,18 @@ void estimateLocation() {
   data["type"] = "LOCATION";
   data["macAddress"] = WiFi.macAddress().c_str();
   data["nodeID"] = (int)mesh.getNodeId();
+  
+  // sending elderly and geofence area 
+  data["elderly"] = "Karen";
+  data["geofenced_area"] = "Flat B";
 
   String output = JSON.stringify(data);
-  mesh.sendSingle(mainNode, output);
+  Serial.println(output);
+
+  String encrypted_message = xor_encrypt(output, xorKey);
+  Serial.println(encrypted_message);
+
+  mesh.sendSingle(mainNode, encrypted_message);
 }
 
 void sendMessage() {

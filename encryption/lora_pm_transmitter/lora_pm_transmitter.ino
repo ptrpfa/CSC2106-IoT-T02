@@ -48,78 +48,94 @@ void announceNodeId() {
 
 // painlessMesh callback function upon receive of a painlessMesh message
 void pmReceiveCallback( uint32_t from, String &msg ) {
+
+  // Convert JSONVar to a string
+  // String lora_message = JSON.stringify(message);
+
+  // Send painlessMesh message received to LoRa
+  if (msg.indexOf("Hello") == -1 && msg.indexOf("BEACON") == -1){
+    display.clear();
+    display.drawString(0, 0, msg);
+    display.display();
+    transmissionState = radio.startTransmit(msg.c_str());
+  }
+
+  // we're ready to send more packets, enable interrupt service routine
+  enableTransmitInterrupt = true;
+
+
   // Parse message received
-  JSONVar message = JSON.parse(msg);
+  // JSONVar message = JSON.parse(msg);
 
-  // Check if parsing succeeded
-  if (JSON.typeof(message) == "undefined") {
-    Serial.printf("Not a JSON message!\n");
-    return;
-  }
-  else {
-    // Only process messages with type of LOCATION (ignore BEACON messages)
-    if (strcmp((const char*)message["type"], "LOCATION") == 0) {
-      // printToDisplay(msg.c_str(), u8g2);
+  // // Check if parsing succeeded
+  // if (JSON.typeof(message) == "undefined") {
+  //   Serial.printf("Not a JSON message!\n");
+  //   return;
+  // }
+  // else {
+  //   // Only process messages with type of LOCATION (ignore BEACON messages)
+  //   if (strcmp((const char*)message["type"], "LOCATION") == 0) {
+  //     // printToDisplay(msg.c_str(), u8g2);
       
-      // Set LoRa node address
-      message["loraAddress"] = WiFi.macAddress().c_str();
-      // Floor no (TEMPORARY)
-      message["floor"] = (int)counter;
+  //     // Set LoRa node address
+  //     message["loraAddress"] = WiFi.macAddress().c_str();
+  //     // Floor no (TEMPORARY)
+  //     message["floor"] = (int)counter;
 
-      /* Parse data */
-      // MAC Address of painlessMesh node
-      String macAddress = (const char*)message["macAddress"];
-      // MAC Address of LoRa node
-      String loraAddress = (const char*)message["loraAddress"];
-      double x = (double)message["x"];
-      double y = (double)message["y"];
-      int floor = (int)message["floor"];
+  //     /* Parse data */
+  //     // MAC Address of painlessMesh node
+  //     String macAddress = (const char*)message["macAddress"];
+  //     // MAC Address of LoRa node
+  //     String loraAddress = (const char*)message["loraAddress"];
+  //     double x = (double)message["x"];
+  //     double y = (double)message["y"];
+  //     int floor = (int)message["floor"];
 
-      // Clear display
-      display.clear();
+  //     // Clear display
+  //     display.clear();
 
-      // Print TX(X)
-      display.drawString(0, 12, "TX(X): " + String(x));
+  //     // Print TX(X)
+  //     display.drawString(0, 12, "TX(X): " + String(x));
 
-      // Print Y
-      display.drawString(0, 26, "Y: " + String(y));
+  //     // Print Y
+  //     display.drawString(0, 26, "Y: " + String(y));
 
-      // Print Floor
-      display.drawString(0, 40, "Floor: " + String(floor));
+  //     // Print Floor
+  //     display.drawString(0, 40, "Floor: " + String(floor));
 
-      // Print macAddress
-      display.drawString(0, 54, "Mac Address: " + macAddress);
+  //     // Print macAddress
+  //     display.drawString(0, 54, "Mac Address: " + macAddress);
 
-      // Print loraAddress
-      display.drawString(0, 68, "LoRa Address: " + loraAddress);
+  //     // Print loraAddress
+  //     display.drawString(0, 68, "LoRa Address: " + loraAddress);
 
-      // Display message
-      display.display();
+  //     // Display message
+  //     display.display();
 
-      // Convert JSONVar to a string
-      String lora_message = JSON.stringify(message);
+  //     // Convert JSONVar to a string
+  //     String lora_message = JSON.stringify(message);
 
-      // Send painlessMesh message received to LoRa
-      transmissionState = radio.startTransmit(lora_message.c_str());
+  //     // Send painlessMesh message received to LoRa
+  //     transmissionState = radio.startTransmit(lora_message.c_str());
 
-      // we're ready to send more packets, enable interrupt service routine
-      enableTransmitInterrupt = true;
+  //     // we're ready to send more packets, enable interrupt service routine
+  //     enableTransmitInterrupt = true;
 
-      // if (transmissionState == RADIOLIB_ERR_NONE) {
-      //   // packet was successfully sent
-      //   u8g2->clearBuffer();
-      //   u8g2->drawStr(0, 12, "Transmitting..");
-      //   u8g2->drawStr(0, 30, ("TX: " + String(counter)).c_str());
-      //   u8g2->sendBuffer();
-      // } 
-      // else {
-      //   printToDisplay("transmission failed!", u8g2);
-      // }
-    } 
-    else {
-      Serial.printf("Not a LOCATION message!\n");
-    }
-  }
+  //     // if (transmissionState == RADIOLIB_ERR_NONE) {
+  //     //   // packet was successfully sent
+  //     //   u8g2->clearBuffer();
+  //     //   u8g2->drawStr(0, 12, "Transmitting..");
+  //     //   u8g2->drawStr(0, 30, ("TX: " + String(counter)).c_str());
+  //     //   u8g2->sendBuffer();
+  //     // } 
+  //     // else {
+  //     //   printToDisplay("transmission failed!", u8g2);
+  //     // }
+  //   } 
+  //   else {
+  //     Serial.printf("Not a LOCATION message!\n");
+  //   }
+  // }
 }
 
 // painlessMesh callback for new connections

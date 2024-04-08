@@ -9,9 +9,9 @@
 // Code for: LoRa Transmitter + painlessMesh Receiver (MAIN NODE)
 
 /* painlessMesh Configurations */
-#define   MESH_PREFIX     "myMesh"
-#define   MESH_PASSWORD   "password"
-#define   MESH_PORT       5555
+#define MESH_PREFIX       "etms-floor-6"
+#define MESH_PASSWORD     "t02_iotPassword"
+#define MESH_PORT         5555
 #define   MAINNODE        "A"
 #define   NODE            "A"
 

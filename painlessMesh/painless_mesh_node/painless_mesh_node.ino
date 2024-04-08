@@ -6,6 +6,7 @@
 #include <M5StickCPlus.h>
 #include <Arduino_JSON.h>
 #include <Preferences.h>
+#include <HTTPClient.h>
 
 #define MESH_PREFIX "myMesh"
 #define MESH_PASSWORD "password"
@@ -24,10 +25,8 @@ uint32_t mainNode;
 String readings;
 
 void sendMessage();
-void sendMainNode();
 
-Task taskSendMessage(TASK_SECOND * 5, TASK_FOREVER, &sendMessage);
-Task taskSendMainNode(TASK_SECOND * 5, TASK_FOREVER, &sendMainNode);
+Task taskSendMessage(TASK_SECOND * 8, TASK_FOREVER, &sendMessage);
 
 struct NodeInfo {
   double x;
@@ -37,14 +36,16 @@ struct NodeInfo {
   uint32_t nodeId;
 
   String toJSONString() {
-    JSONVar node;
+    StaticJsonDocument<200> node;
     node["x"] = x;
     node["y"] = y;
     node["macAddress"] = macAddress.c_str();
     node["type"] = type.c_str();
     node["nodeID"] = (int)nodeId;
 
-    String output = JSON.stringify(node);
+    // String output = JSON.stringify(node);
+    String output;
+    serializeJson(node, output);
     return output;
   }
 };
@@ -52,25 +53,15 @@ struct NodeInfo {
 NodeInfo myInfo;
 
 void sendMessage() {
-  // String msg = getReadings();
-  mesh.sendBroadcast(myInfo.toJSONString());
-  // taskSendMessage.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
-}
+  String infoMsg = myInfo.toJSONString();
+  std::list<uint32_t> nodes = mesh.getNodeList();
 
-void sendMainNode() {
-  if (mainNodeSet) {
-    // Retrieve self coords
-    preferences.begin("coords", true);
-    double x = preferences.getDouble("x", 0.0);
-    double y = preferences.getDouble("y", 0.0);
-    preferences.end();
+  for(uint32_t nodeId : nodes) {
+    Serial.println(nodeId);
 
-    String msg = "Hello Main Node from Beacon (";
-    msg += x;
-    msg += ", ";
-    msg += y;
-    msg += ")";
-    mesh.sendSingle(mainNode, msg);
+    if(nodeId != mainNode) {
+      mesh.sendSingle(nodeId, infoMsg);
+    }
   }
 }
 
@@ -102,7 +93,16 @@ void changedConnectionCallback() {
     isFirstConnection = false;
 
     // Broadcast my info
-    mesh.sendBroadcast(myInfo.toJSONString());
+    String infoMsg = myInfo.toJSONString();
+    std::list<uint32_t> nodes = mesh.getNodeList();
+
+    for(uint32_t nodeId : nodes) {
+      Serial.println(nodeId);
+
+      if(nodeId != mainNode) {
+        mesh.sendSingle(nodeId, infoMsg);
+      }
+    }
   }
   Serial.printf("Changed connections\n");
 }
@@ -166,12 +166,12 @@ void setup() {
   // double y_coords = 1.0;
 
   // // Anchor 4
-  // double x_coords = 7.0;
-  // double y_coords = 1.0;
+  double x_coords = 18.0;
+  double y_coords = 13.0;
 
-  // // Anchor 5
-  double x_coords = 7.0;
-  double y_coords = 5.0;
+  // Anchor 5
+  // double x_coords = 7.0;
+  // double y_coords = 5.0;
 
   storeCoordinates(x_coords, y_coords);
 
@@ -189,10 +189,8 @@ void setup() {
   initNodeObject();
   M5.Lcd.setCursor(0, 20, 2);
   delay(1500);
-  userScheduler.addTask(taskSendMainNode);
   userScheduler.addTask(taskSendMessage);
   taskSendMessage.enable();
-  taskSendMainNode.enable();
 }
 
 void loop() {
@@ -203,12 +201,4 @@ void loop() {
 void clearDisplay() {
   M5.Lcd.fillRect(0, 20, M5.Lcd.width(), M5.Lcd.height() - 20, BLACK);
   M5.Lcd.setCursor(0, 20, 2);
-}
-
-String getReadings() {
-  JSONVar jsonReadings;
-  jsonReadings["node"] = NODE;
-  jsonReadings["temp"] = M5.Axp.GetTempData() * 0.1 - 144.7;
-  readings = JSON.stringify(jsonReadings);
-  return readings;
 }

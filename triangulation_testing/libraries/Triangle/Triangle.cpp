@@ -13,10 +13,6 @@ double Triangle::square(const double value) const {
     return value * value;
 }
 
-double Triangle::test() const {
-    return 10.0;
-}
-
 Point Triangle::getTriangulation(const double distance_1, const double distance_2, const double distance_3) const {
    
     const double c = square(node_2.getX()) + square(node_2.getY()) - square(node_1.getX()) - square(node_1.getY()) + square(distance_1) - square(distance_2);
@@ -27,4 +23,3 @@ Point Triangle::getTriangulation(const double distance_1, const double distance_
 
     return Point(x, y);
 }
-

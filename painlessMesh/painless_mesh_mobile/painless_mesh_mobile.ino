@@ -3,6 +3,7 @@
 #include <Arduino_JSON.h>
 #include <cmath>
 #include <Triangle.h>
+#include <HTTPClient.h>
 #include <vector>
 
 #define MESH_PREFIX "myMesh"
@@ -20,7 +21,6 @@ uint32_t mainNode;
 String readings;
 
 void sendMessage();
-void sendMainNode();
 void estimateLocation();
 
 struct NodeInfo {
@@ -32,8 +32,6 @@ struct NodeInfo {
 
 std::vector<NodeInfo> nodeList;
 
-Task taskSendMessage(TASK_SECOND * 1, TASK_FOREVER, &sendMessage);
-// Task taskSendMainNode(TASK_SECOND * 1, TASK_FOREVER, &sendMainNode);
 Task taskEstimateLocation(TASK_SECOND * 10, TASK_FOREVER, &estimateLocation);
 
 // XOR encryption key
@@ -87,11 +85,11 @@ void estimateLocation() {
       String msg;
       if (WiFi.SSID(i) == "myMesh") {
         Serial.println("WiFi BSSID: " + WiFi.BSSIDstr(i) + "\n");
-        
         rssiVector.push_back(std::make_pair(WiFi.BSSIDstr(i), WiFi.RSSI(i)));
       } 
     }
   }
+
   WiFi.scanDelete();
 
   if (rssiVector.size() < 3) {
@@ -109,6 +107,7 @@ void estimateLocation() {
   }
 
   // Get nearest 3 mac addresses
+  // Sort RSSI vectors
   std::sort(rssiVector.begin(), rssiVector.end(), [](const std::pair<String, int>& a, const std::pair<String, int>& b) {
     return a.second > b.second;
   });
@@ -118,15 +117,44 @@ void estimateLocation() {
   std::pair<String, int> nearestThreeArray[3];
 
   int count = 0;
+
+  // Find top three vectors
   for (auto& pair : rssiVector) {
     if (count >= 3) break;
-    nearestThreeArray[count] = std::make_pair(pair.first, pair.second);
-
     Serial.printf("Pair %d First: ", count);
     Serial.println(pair.first);
     Serial.printf("Pair %d Second: %d\n", count, pair.second);
 
-    count++;
+    // Find MAC address in nodeList
+    // To ensure that the MAC Address is stored in the nodelist before appending as top three
+    String targetMacSubstrFirst = pair.first.substring(0,15);
+    String targetMacSubstrSec = pair.first.substring(15,17);
+    int hexVal = strtol(targetMacSubstrSec.c_str(), nullptr, 16);
+
+    if (hexVal > 0) {
+      hexVal -= 1;
+    }
+
+    char hexStr[3];
+    sprintf(hexStr, "%02X",hexVal & 0xFF);
+    targetMacSubstrSec = String(hexStr);
+
+    String targetMac = targetMacSubstrFirst + targetMacSubstrSec;
+
+    // Iterate nodeList, if macAddr is found in nodelist append to top three array
+    for (auto& node : nodeList) {
+      if (strcmp(node.macAddress.c_str(), targetMac.c_str()) == 0) {
+          nearestThreeArray[count] = std::make_pair(pair.first, pair.second);
+          count++;
+          break;  // Stop searching through nodeList once a match is found
+        }
+      }
+  }
+  
+  // Ensure we have at least three data
+  if (count < 3) {
+    Serial.println("Not enough data!");
+    return;
   }
 
   // Compare nodeList to get three coordinates
@@ -159,9 +187,7 @@ void estimateLocation() {
     if (hexVal > 0) {
       hexVal -= 1;
     }
-    else {
 
-    }
     char hexStr[3];
     sprintf(hexStr, "%02X",hexVal & 0xFF);
     targetMacSubstrSec = String(hexStr);
@@ -171,9 +197,6 @@ void estimateLocation() {
     for (auto& node : nodeList) {
       Serial.println(targetMac);
 
-      // String nodeMacAddressSubstr = node.macAddress.substring(0,14);
-      // Serial.println(nodeMacAddressSubstr);
-      // Serial.println(targetMacSubstr);
       if (strcmp(node.macAddress.c_str(), targetMac.c_str()) == 0) {
         // Add the node's coordinates to topThreeCoordinates
         Serial.println("Found");
@@ -188,6 +211,7 @@ void estimateLocation() {
   Serial.printf("%lf, %lf \n", topThreeCoordinates[2].getX(), topThreeCoordinates[2].getY());
 
   Serial.printf("Getting triangulation data\n");
+
   // Get triangulation
   Triangle triangle = Triangle(topThreeCoordinates[0], topThreeCoordinates[1], topThreeCoordinates[2]);
   Serial.printf("Made Triangle\n");
@@ -206,65 +230,23 @@ void estimateLocation() {
   M5.Lcd.print("y Coordinate: ");
   M5.Lcd.print(y);
   // Send to main node
-  JSONVar data;
   Serial.printf("Sending to main node\n");
+  StaticJsonDocument<200> data;
   data["x"] = x;
   data["y"] = y;
   data["type"] = "LOCATION";
-  data["macAddress"] = WiFi.macAddress().c_str();
   data["nodeID"] = (int)mesh.getNodeId();
   
-  // sending elderly and geofence area 
-  data["elderly"] = "Karen";
-  data["geofenced_area"] = "Flat B";
+  // Serialize JSON object to string
+  String output;
+  serializeJson(data, output);
 
-  String output = JSON.stringify(data);
   Serial.println(output);
 
   String encrypted_message = xor_encrypt(output, xorKey);
   Serial.println(encrypted_message);
 
   mesh.sendSingle(mainNode, encrypted_message);
-}
-
-void sendMessage() {
-  String msg = getReadings();
-  mesh.sendBroadcast(msg);
-  taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 5));
-}
-
-void sendMainNode() {
-  if (mainNodeSet) {
-    int n = WiFi.scanNetworks();
-    Serial.println("Scan done");
-    if (n == 0) {
-      Serial.println("No networks found");
-    } else {
-      for (int i = 0; i < n; ++i) {
-        // Print SSID and RSSI for each network found
-        String msg;
-        if (WiFi.SSID(i) == "myMesh") {
-          M5.Lcd.print("MAC Address: ");
-          M5.Lcd.print(WiFi.BSSIDstr(i));
-          M5.Lcd.print(" ; RSSI: ");
-          M5.Lcd.printf(" ; RSSI: (%d dBm)\n", WiFi.RSSI(i));
-
-          Serial.printf("BSSID: ");
-          Serial.print(WiFi.BSSIDstr(i));
-          Serial.printf(" RSSI: ");
-          Serial.print(WiFi.RSSI(i));
-          Serial.printf(" (dBm)\n");
-        }
-      }
-    }
-    WiFi.scanDelete();
-
-    String msg = "Hello Main Node from ";
-    msg += NODE;
-    msg += count;
-    count++;
-    mesh.sendSingle(mainNode, msg);
-  }
 }
 
 // Needed for painless library
@@ -278,21 +260,23 @@ void receivedCallback(uint32_t from, String& msg) {
       Serial.printf("Main node identified: %u\n", mainNode);
       M5.Lcd.printf("Main node identified: %u\n", mainNode);
       mainNodeSet = true;
+      return;
     }
   }
 
-  JSONVar newInfo = JSON.parse(msg);
-
-  // Check if parsing succeeded
-  if (JSON.typeof(newInfo) == "undefined") {
-    // Serial.println("Not a JSON");
+  if (msg.startsWith(MAINNODE)) {
     return;
   }
 
-  // Serial.println(newInfo["type"]);
+  char messageBuffer[msg.length() + 1];
+  msg.toCharArray(messageBuffer, msg.length() + 1);
+
+  // Deserialize JSON from char* buffer
+  StaticJsonDocument<200> newInfo;
+  deserializeJson(newInfo, messageBuffer);
+
   
   if (strcmp((const char*)newInfo["type"], "BEACON") == 0) {
-    // Serial.println("Received new beacon\n");
     String macAddress = (const char*)newInfo["macAddress"];
     int index = findNodeByMAC(macAddress);
 
@@ -329,7 +313,6 @@ void nodeTimeAdjustedCallback(int32_t offset) {
 }
 
 void initMesh() {
-  //mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
   mesh.setDebugMsgTypes(ERROR | STARTUP);  // set before init() so that you can see startup messages
 
   mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT);
@@ -346,7 +329,6 @@ void initMesh() {
   M5.Lcd.setCursor(0, 0, 2);
   M5.Lcd.printf("STARTING NODE %s\n", NODE);
 
-  // userScheduler.addTask(taskSendMainNode);
   userScheduler.addTask(taskEstimateLocation);
   taskEstimateLocation.enable();
 }
@@ -368,14 +350,20 @@ void loop() {
   // it will run the user scheduler as well
   mesh.update();
   if (digitalRead(BUTTON_A_PIN) == LOW) { 
-    JSONVar data;
+
+    // Hardcoded LoRa transmission for testing (COMMENT OUT FOR TESTING ONLY)
+    StaticJsonDocument<200> data;
+
     Serial.printf("Sending panic to main node\n");
     data["macAddress"] = WiFi.macAddress().c_str();
     data["nodeID"] = (int)mesh.getNodeId();
     data["type"] = "PANIC";
 
-    String output = JSON.stringify(data);
-    mesh.sendSingle(mainNode, output);
+    // Serialize JSON object to string
+    String message;
+    serializeJson(data, message);
+
+    mesh.sendSingle(mainNode, message);
     while(digitalRead(BUTTON_A_PIN) == LOW); // Wait for button release to avoid multiple writes
   }
 
@@ -385,12 +373,4 @@ void clearDisplay() {
 
   M5.Lcd.fillRect(0, 20, M5.Lcd.width(), M5.Lcd.height() - 20, BLACK);
   M5.Lcd.setCursor(0, 20, 2);
-}
-
-String getReadings() {
-  JSONVar jsonReadings;
-  jsonReadings["node"] = NODE;
-  jsonReadings["temp"] = M5.Axp.GetTempData() * 0.1 - 144.7;
-  readings = JSON.stringify(jsonReadings);
-  return readings;
 }

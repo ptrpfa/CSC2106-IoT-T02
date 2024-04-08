@@ -40,6 +40,10 @@ def realTimeData():
 
     return  render_template("elderlyRealTimeData.html", documents=document, segment='index')
 
+@blueprint.route("/developer-form")
+def form():
+    return  render_template("developerForm.html", segment='index')
+
 @blueprint.route("/lilygo-data", methods=['POST', 'GET'])
 def lilygoData():
     global m5_hardware_id, elderly, geofenced_area, x , y, floor, timestamp

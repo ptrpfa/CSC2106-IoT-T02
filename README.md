@@ -1,16 +1,16 @@
 ## Table of Contents
-1. [Team](#csc2106-iot-elderly-tracking-system)
+1. [Team](#team)
 2. [Overview](#overview-elderly-tracking-and-monitoring-system)
 3. [System Design](#system-design)
 4. [Requirements](#requirements)
 5. [Getting Started](#getting-started)
 
-## CSC2106 IoT Team 2
-- Peter Febrianto Afandy (*2200959*)
-- Lionel Sim Wei Xian (*2201132*)
-- Ashley Tay Yong Jun (*2200795*)
-- Joshua Lim (*2200687*)
-- Colin Ng Kar Jun (*2200920*)
+## Team
+- Peter Febrianto Afandy 
+- Lionel Sim Wei Xian 
+- Ashley Tay Yong Jun 
+- Joshua Lim 
+- Colin Ng Kar Jun
 
 ## Overview (Elderly Tracking and Monitoring System)
 The increasing number of elderly individuals living independently in Singapore or with conditions such as dementia presents a critical challenge for caregivers and society at large. With a significant portion of the elderly population at risk of getting lost or encountering emergencies without immediate assistance, there is an urgent need for innovative solutions to monitor and ensure their safety within their living environments. 
